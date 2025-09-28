@@ -1,58 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Zentro Design System - Professional Fintech Aesthetic */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Core Brand Colors - Zentro Blue & Green */
+    --primary: 217 91% 60%; /* #3B82F6 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 217 91% 90%;
+    --primary-dark: 217 91% 45%;
+    
+    --secondary: 158 64% 52%; /* #10B981 */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 158 64% 90%;
+    
+    /* Professional Neutral Palette */
+    --background: 0 0% 99%;
+    --foreground: 222 84% 5%;
+    
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 222 84% 5%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 84% 5%;
+    
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Professional Design Elements */
+    --radius: 0.75rem;
+    --shadow-sm: 0 1px 2px 0 hsl(220 13% 91% / 0.05);
+    --shadow: 0 1px 3px 0 hsl(220 13% 91% / 0.1), 0 1px 2px 0 hsl(220 13% 91% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(220 13% 91% / 0.1), 0 4px 6px -2px hsl(220 13% 91% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(220 13% 91% / 0.1), 0 10px 10px -5px hsl(220 13% 91% / 0.04);
+    
+    /* Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(158 64% 42%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(220 14% 98%) 100%);
+    
+    /* Professional Typography Scale */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+    --text-3xl: 1.875rem;  /* 30px */
+    --text-4xl: 2.25rem;   /* 36px */
+    
+    /* Professional Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease-out;
   }
 
   .dark {
@@ -100,6 +115,83 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  /* Professional Card Components */
+  .card-professional {
+    @apply bg-card border border-border rounded-xl shadow-lg backdrop-blur-sm;
+    background: var(--gradient-card);
+  }
+  
+  .card-elevated {
+    @apply card-professional shadow-xl;
+  }
+  
+  /* Professional Button Variants */
+  .btn-primary {
+    background: var(--gradient-primary);
+    @apply text-primary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105;
+  }
+  
+  .btn-secondary {
+    background: var(--gradient-secondary);
+    @apply text-secondary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105;
+  }
+  
+  /* Professional Input Styles */
+  .input-professional {
+    @apply bg-background border border-input rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground;
+    transition: var(--transition-smooth);
+  }
+  
+  .input-professional:focus {
+    @apply ring-2 ring-primary border-primary outline-none;
+  }
+  
+  /* Professional Typography */
+  .text-display {
+    font-size: var(--text-4xl);
+    @apply font-bold tracking-tight text-foreground;
+  }
+  
+  .text-heading {
+    font-size: var(--text-2xl);
+    @apply font-semibold text-foreground;
+  }
+  
+  .text-body {
+    font-size: var(--text-base);
+    @apply text-foreground;
+  }
+  
+  .text-caption {
+    font-size: var(--text-sm);
+    @apply text-muted-foreground;
+  }
+  
+  /* Professional Layout Classes */
+  .container-professional {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .grid-professional {
+    @apply grid gap-6 md:gap-8;
+  }
+  
+  /* Professional Status Indicators */
+  .status-approved {
+    @apply bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .status-pending {
+    @apply bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .status-denied {
+    @apply bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-medium;
   }
 }
