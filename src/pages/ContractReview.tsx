@@ -5,6 +5,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/Navbar";
+import ContractTimeline, { TimelineStep } from "@/components/ContractTimeline";
+import { usePolkadotWallet } from "@/hooks/usePolkadotWallet";
+import { IPFSUploader } from "@/services/IPFSUploader";
+import { CreditRegistryService } from "@/services/CreditRegistryService";
+import { generateContractPDF, blobToFile } from "@/utils/pdfGenerator";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Download,
@@ -16,7 +22,11 @@ import {
   Calendar,
   DollarSign,
   User,
-  Shield
+  Shield,
+  Wallet,
+  Link2,
+  Upload,
+  Loader2
 } from "lucide-react";
 
 export default function ContractReview() {
@@ -39,6 +49,16 @@ export default function ContractReview() {
   
   const [isApproved, setIsApproved] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  
+  // Web3 states
+  const wallet = usePolkadotWallet();
+  const [contractSigned, setContractSigned] = useState(false);
+  const [ipfsCID, setIpfsCID] = useState<string | null>(null);
+  const [blockchainTxHash, setBlockchainTxHash] = useState<string | null>(null);
+  const [blockNumber, setBlockNumber] = useState<number | null>(null);
+  const [explorerUrl, setExplorerUrl] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStep, setProcessStep] = useState<"idle" | "signing" | "uploading" | "anchoring" | "completed">("idle");
 
   // Calculate monthly payment
   const calculateMonthlyPayment = () => {
@@ -57,16 +77,118 @@ export default function ContractReview() {
 
   const monthlyPayment = calculateMonthlyPayment();
 
+  const handleSignContract = async () => {
+    if (!wallet.isConnected) {
+      toast.error("Por favor conecta tu wallet primero");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessStep("signing");
+
+    try {
+      // Generate contract content
+      const contractData = {
+        applicationId,
+        customerName: applicationData?.customerName || "John Doe",
+        customerEmail: applicationData?.customerEmail || "john@example.com",
+        customerPhone: applicationData?.customerPhone || "+1 (555) 123-4567",
+        creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+        interestRate: contractTerms.interestRate,
+        termLength: contractTerms.termLength,
+        monthlyPayment: monthlyPayment.toLocaleString(),
+        lateFeesPolicy: contractTerms.lateFeesPolicy,
+        earlyPaymentPolicy: contractTerms.earlyPaymentPolicy
+      };
+
+      const contractText = generateContractPDF(contractData);
+      
+      // Generate hash
+      const pdfHash = CreditRegistryService.generatePDFHash(contractText);
+      
+      // Sign the hash
+      const signature = await wallet.signMessage(pdfHash);
+      
+      setContractSigned(true);
+      toast.success("Contrato firmado exitosamente");
+      
+      // Upload to IPFS
+      setProcessStep("uploading");
+      const contractFile = blobToFile(new Blob([contractText]), `contract-${applicationId}.txt`);
+      
+      // Using mock upload for demo - replace with real IPFS in production
+      const ipfsResult = await IPFSUploader.mockUpload(contractFile);
+      setIpfsCID(ipfsResult.cid);
+      toast.success("Contrato subido a IPFS");
+      
+      // Register on blockchain
+      setProcessStep("anchoring");
+      if (wallet.signer) {
+        const registryService = new CreditRegistryService(wallet.signer);
+        const txResult = await registryService.registerCredit(ipfsResult.cid, pdfHash);
+        
+        setBlockchainTxHash(txResult.txHash);
+        setBlockNumber(txResult.blockNumber);
+        setExplorerUrl(txResult.explorerUrl);
+        
+        toast.success("Contrato registrado en blockchain");
+      }
+      
+      setProcessStep("completed");
+      setIsApproved(true);
+      
+    } catch (error: any) {
+      console.error("Error in contract flow:", error);
+      toast.error(error.message || "Error al procesar contrato");
+      setProcessStep("idle");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleSendContract = async () => {
     setIsSending(true);
-    // Simulate sending contract
     await new Promise(resolve => setTimeout(resolve, 2000));
-    navigate("/", { 
+    navigate("/dashboard", { 
       state: { 
         message: "Contract sent successfully to customer for signature",
         type: "success"
       }
     });
+  };
+
+  // Timeline steps for Web3 process
+  const getTimelineSteps = (): TimelineStep[] => {
+    return [
+      {
+        id: "sign",
+        label: "Firmar Contrato",
+        status: contractSigned ? "completed" : processStep === "signing" ? "current" : "pending",
+        timestamp: contractSigned ? new Date().toLocaleTimeString() : undefined,
+        details: contractSigned ? "Contrato firmado digitalmente" : "Firma el hash del contrato con tu wallet"
+      },
+      {
+        id: "ipfs",
+        label: "Subir a IPFS",
+        status: ipfsCID ? "completed" : processStep === "uploading" ? "current" : "pending",
+        timestamp: ipfsCID ? new Date().toLocaleTimeString() : undefined,
+        details: ipfsCID ? `CID: ${ipfsCID.substring(0, 20)}...` : "Almacenamiento descentralizado"
+      },
+      {
+        id: "blockchain",
+        label: "Anclar en Blockchain",
+        status: blockchainTxHash ? "completed" : processStep === "anchoring" ? "current" : "pending",
+        timestamp: blockchainTxHash ? new Date().toLocaleTimeString() : undefined,
+        details: blockchainTxHash ? `Block: ${blockNumber}` : "Registro inmutable en Polkadot"
+      },
+      {
+        id: "verify",
+        label: "Verificación Completa",
+        status: processStep === "completed" ? "completed" : "pending",
+        timestamp: processStep === "completed" ? new Date().toLocaleTimeString() : undefined,
+        details: processStep === "completed" ? "Contrato verificado y almacenado" : "Validación final"
+      }
+    ];
   };
 
   return (
@@ -92,13 +214,27 @@ export default function ContractReview() {
             </div>
             
             <div className="flex items-center space-x-3">
+              {!wallet.isConnected ? (
+                <Button onClick={wallet.connectWallet} disabled={wallet.isConnecting}>
+                  <Wallet className="w-4 h-4 mr-2" />
+                  {wallet.isConnecting ? "Conectando..." : "Conectar Wallet"}
+                </Button>
+              ) : (
+                <div className="flex items-center space-x-2 px-3 py-2 bg-secondary/10 rounded-lg">
+                  <Wallet className="w-4 h-4 text-secondary" />
+                  <span className="text-sm font-mono">
+                    {wallet.address?.substring(0, 6)}...{wallet.address?.substring(38)}
+                  </span>
+                </div>
+              )}
+              
               <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
                 <Edit className="w-4 h-4 mr-2" />
-                {isEditing ? "View Mode" : "Edit Terms"}
+                {isEditing ? "Ver Modo" : "Editar Términos"}
               </Button>
               <Button variant="outline">
                 <Download className="w-4 h-4 mr-2" />
-                Download PDF
+                Descargar PDF
               </Button>
             </div>
           </div>
@@ -288,6 +424,70 @@ export default function ContractReview() {
                   </div>
                 </div>
 
+                {/* Web3 Integration Section */}
+                {wallet.isConnected && (
+                  <div className="mb-8 p-6 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg border border-primary/20">
+                    <h3 className="text-heading mb-4 flex items-center">
+                      <Link2 className="w-5 h-5 mr-2 text-primary" />
+                      Blockchain Integration
+                    </h3>
+                    
+                    <ContractTimeline steps={getTimelineSteps()} />
+                    
+                    {blockchainTxHash && (
+                      <div className="mt-6 p-4 bg-background rounded-lg border border-border space-y-3">
+                        <div className="flex justify-between items-start">
+                          <span className="text-caption text-muted-foreground">Transaction Hash:</span>
+                          <a 
+                            href={explorerUrl || "#"} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs font-mono text-primary hover:underline break-all text-right ml-4"
+                          >
+                            {blockchainTxHash.substring(0, 20)}...
+                          </a>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-caption text-muted-foreground">Block Number:</span>
+                          <span className="text-sm font-medium">{blockNumber}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-caption text-muted-foreground">IPFS CID:</span>
+                          <span className="text-xs font-mono">{ipfsCID?.substring(0, 20)}...</span>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full mt-2"
+                          onClick={() => window.open(explorerUrl || "#", "_blank")}
+                        >
+                          Ver en Block Explorer
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {!contractSigned && (
+                      <Button 
+                        onClick={handleSignContract}
+                        disabled={isProcessing}
+                        className="w-full mt-4 btn-primary"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Procesando...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-4 h-4 mr-2" />
+                            Firmar y Anclar en Blockchain
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 {/* Approval Section */}
                 <div className="border-t border-border pt-6">
                   <div className="flex items-start space-x-3 mb-6">
@@ -295,34 +495,38 @@ export default function ContractReview() {
                       id="approve"
                       checked={isApproved}
                       onCheckedChange={(checked) => setIsApproved(!!checked)}
+                      disabled={wallet.isConnected && !contractSigned}
                     />
                     <label
                       htmlFor="approve"
                       className="text-body leading-relaxed"
                     >
-                      I have reviewed all contract terms and approve this agreement for customer signature.
-                      The terms accurately reflect the approved credit application and comply with company policies.
+                      He revisado todos los términos del contrato y apruebo este acuerdo para la firma del cliente.
+                      Los términos reflejan con precisión la solicitud de crédito aprobada y cumplen con las políticas de la empresa.
                     </label>
                   </div>
                   
                   <div className="flex space-x-4">
                     <Button 
                       onClick={handleSendContract}
-                      disabled={!isApproved || isSending}
+                      disabled={!isApproved || isSending || (wallet.isConnected && !contractSigned)}
                       className="btn-primary"
                     >
                       {isSending ? (
-                        <>Sending...</>
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
                       ) : (
                         <>
                           <Send className="w-4 h-4 mr-2" />
-                          Send to Customer
+                          Enviar al Cliente
                         </>
                       )}
                     </Button>
                     
-                    <Button variant="outline" onClick={() => navigate("/")}>
-                      Save Draft
+                    <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                      Guardar Borrador
                     </Button>
                   </div>
                 </div>
