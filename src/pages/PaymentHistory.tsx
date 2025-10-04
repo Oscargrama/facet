@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,7 +15,8 @@ import {
   Clock,
   CheckCircle,
   Filter,
-  Eye
+  Eye,
+  FileText
 } from "lucide-react";
 
 // Mock payment data
@@ -113,6 +114,7 @@ const stats = [
 ];
 
 export default function PaymentHistory() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
@@ -302,9 +304,25 @@ export default function PaymentHistory() {
                       <p className="font-medium text-foreground">${payment.remaining.toLocaleString()}</p>
                     </td>
                     <td className="p-4">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate("/contract-review", {
+                            state: {
+                              applicationId: payment.applicationId,
+                              applicationData: {
+                                customerName: payment.customer,
+                                creditAmount: payment.remaining.toString(),
+                                customerEmail: `${payment.customer.toLowerCase().replace(' ', '.')}@example.com`
+                              },
+                              riskScore: 720
+                            }
+                          })}
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
