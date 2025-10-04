@@ -6,7 +6,8 @@ import {
   FileText, 
   User, 
   Bell,
-  Menu
+  Menu,
+  FileCheck
 } from "lucide-react";
 import { useState } from "react";
 
@@ -14,6 +15,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Applications", href: "/credit-application", icon: CreditCard },
   { name: "Payments", href: "/payment-history", icon: FileText },
+  { name: "Contracts", href: "/contract-review", icon: FileCheck },
 ];
 
 export default function Navbar() {
