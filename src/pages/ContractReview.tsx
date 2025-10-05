@@ -148,13 +148,69 @@ export default function ContractReview() {
 
   const handleSendContract = async () => {
     setIsSending(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    navigate("/", { 
-      state: { 
-        message: "Contract sent successfully to customer for signature",
-        type: "success"
+    
+    try {
+      // Generate PDF contract
+      const contractData = {
+        applicationId,
+        customerName: applicationData?.customerName || "John Doe",
+        customerEmail: applicationData?.customerEmail || "john@example.com",
+        customerPhone: applicationData?.customerPhone || "+1 (555) 123-4567",
+        creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+        interestRate: contractTerms.interestRate,
+        termLength: contractTerms.termLength,
+        monthlyPayment: monthlyPayment.toLocaleString(),
+        lateFeesPolicy: contractTerms.lateFeesPolicy,
+        earlyPaymentPolicy: contractTerms.earlyPaymentPolicy,
+        additionalTerms: contractTerms.additionalTerms,
+        approvalDate: new Date().toLocaleDateString(),
+        firstPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        contractNumber: `CONTRACT-${applicationId}`,
+        ipfsCID: ipfsCID || "Pending blockchain registration",
+        blockchainTxHash: blockchainTxHash || "Pending blockchain registration"
+      };
+
+      toast.info("Generando contrato PDF...");
+      const contractText = generateContractPDF(contractData);
+      
+      // Convert text to base64
+      const base64 = btoa(unescape(encodeURIComponent(contractText)));
+
+      toast.info("Enviando correo al cliente...");
+
+      // Call edge function to send email
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase.functions.invoke('send-contract-email', {
+        body: {
+          customerName: applicationData?.customerName || "John Doe",
+          customerEmail: applicationData?.customerEmail || "john@example.com",
+          contractPdfBase64: base64,
+          applicationId,
+          creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+          termLength: contractTerms.termLength,
+          interestRate: contractTerms.interestRate,
+          monthlyPayment: monthlyPayment.toLocaleString(),
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Error al enviar el correo");
       }
-    });
+
+      toast.success("¡Contrato enviado exitosamente al cliente!");
+      
+      navigate("/", { 
+        state: { 
+          message: `Contrato enviado exitosamente a ${applicationData?.customerEmail}. El cliente recibirá el contrato con los términos y condiciones en su correo.`,
+          type: "success"
+        }
+      });
+    } catch (error: any) {
+      console.error("Error sending contract:", error);
+      toast.error(error.message || "Error al enviar el contrato");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Timeline steps for Web3 process
