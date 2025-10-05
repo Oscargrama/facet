@@ -14,7 +14,302 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contracts: {
+        Row: {
+          activated_at: string | null
+          additional_terms: string | null
+          application_id: string
+          block_number: number | null
+          blockchain_tx_hash: string | null
+          completed_at: string | null
+          contract_hash: string | null
+          contract_number: string
+          created_at: string
+          credit_amount: number
+          early_payment_policy: string | null
+          first_payment_date: string
+          id: string
+          interest_rate: number
+          ipfs_cid: string | null
+          late_fees_policy: string | null
+          monthly_payment: number
+          signed_at: string | null
+          status: string
+          term_months: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          additional_terms?: string | null
+          application_id: string
+          block_number?: number | null
+          blockchain_tx_hash?: string | null
+          completed_at?: string | null
+          contract_hash?: string | null
+          contract_number: string
+          created_at?: string
+          credit_amount: number
+          early_payment_policy?: string | null
+          first_payment_date: string
+          id?: string
+          interest_rate: number
+          ipfs_cid?: string | null
+          late_fees_policy?: string | null
+          monthly_payment: number
+          signed_at?: string | null
+          status?: string
+          term_months: number
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          additional_terms?: string | null
+          application_id?: string
+          block_number?: number | null
+          blockchain_tx_hash?: string | null
+          completed_at?: string | null
+          contract_hash?: string | null
+          contract_number?: string
+          created_at?: string
+          credit_amount?: number
+          early_payment_policy?: string | null
+          first_payment_date?: string
+          id?: string
+          interest_rate?: number
+          ipfs_cid?: string | null
+          late_fees_policy?: string | null
+          monthly_payment?: number
+          signed_at?: string | null
+          status?: string
+          term_months?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_applications: {
+        Row: {
+          application_number: string
+          created_at: string
+          credit_amount: number
+          credit_history_factor_score: number | null
+          credit_history_score: number
+          credit_purpose_factor_score: number | null
+          debt_ratio_factor_score: number | null
+          decision: string | null
+          employment_stability_factor_score: number | null
+          id: string
+          monthly_debt_payment: number | null
+          monthly_income: number
+          monthly_income_factor_score: number | null
+          purpose: string
+          reviewed_at: string | null
+          risk_score: number | null
+          status: string
+          submitted_at: string
+          term_months: number
+          updated_at: string
+          user_id: string
+          years_in_employment: number | null
+        }
+        Insert: {
+          application_number: string
+          created_at?: string
+          credit_amount: number
+          credit_history_factor_score?: number | null
+          credit_history_score: number
+          credit_purpose_factor_score?: number | null
+          debt_ratio_factor_score?: number | null
+          decision?: string | null
+          employment_stability_factor_score?: number | null
+          id?: string
+          monthly_debt_payment?: number | null
+          monthly_income: number
+          monthly_income_factor_score?: number | null
+          purpose: string
+          reviewed_at?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string
+          term_months: number
+          updated_at?: string
+          user_id: string
+          years_in_employment?: number | null
+        }
+        Update: {
+          application_number?: string
+          created_at?: string
+          credit_amount?: number
+          credit_history_factor_score?: number | null
+          credit_history_score?: number
+          credit_purpose_factor_score?: number | null
+          debt_ratio_factor_score?: number | null
+          decision?: string | null
+          employment_stability_factor_score?: number | null
+          id?: string
+          monthly_debt_payment?: number | null
+          monthly_income?: number
+          monthly_income_factor_score?: number | null
+          purpose?: string
+          reviewed_at?: string | null
+          risk_score?: number | null
+          status?: string
+          submitted_at?: string
+          term_months?: number
+          updated_at?: string
+          user_id?: string
+          years_in_employment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_due: number
+          amount_paid: number | null
+          blockchain_tx_hash: string | null
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          interest_amount: number | null
+          late_fee: number | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_number: number
+          principal_amount: number | null
+          status: string
+          transaction_reference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_due: number
+          amount_paid?: number | null
+          blockchain_tx_hash?: string | null
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          interest_amount?: number | null
+          late_fee?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_number: number
+          principal_amount?: number | null
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_due?: number
+          amount_paid?: number | null
+          blockchain_tx_hash?: string | null
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          interest_amount?: number | null
+          late_fee?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_number?: number
+          principal_amount?: number | null
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          created_at: string
+          credit_history_score: number | null
+          email: string
+          employment_status: string | null
+          full_name: string
+          id: string
+          monthly_debt_payment: number | null
+          monthly_income: number | null
+          phone: string | null
+          updated_at: string
+          years_in_employment: number | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          credit_history_score?: number | null
+          email: string
+          employment_status?: string | null
+          full_name: string
+          id: string
+          monthly_debt_payment?: number | null
+          monthly_income?: number | null
+          phone?: string | null
+          updated_at?: string
+          years_in_employment?: number | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          credit_history_score?: number | null
+          email?: string
+          employment_status?: string | null
+          full_name?: string
+          id?: string
+          monthly_debt_payment?: number | null
+          monthly_income?: number | null
+          phone?: string | null
+          updated_at?: string
+          years_in_employment?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
