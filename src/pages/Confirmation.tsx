@@ -1,23 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { CheckCircle, Clock, ArrowRight, Home, Eye } from "lucide-react";
+import { CheckCircle, Clock, ArrowRight, Home, Eye, Loader2 } from "lucide-react";
 
 export default function Confirmation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [applicationId] = useState(`APP-${Date.now().toString().slice(-6)}`);
   
+  const applicationId = location.state?.applicationId;
+  const applicationNumber = location.state?.applicationNumber;
   const applicationData = location.state?.applicationData;
 
   useEffect(() => {
-    if (!applicationData) {
+    if (!applicationData || !applicationId) {
       navigate("/credit-application");
+      return;
     }
-  }, [applicationData, navigate]);
 
-  if (!applicationData) {
+    // Auto-redirect to risk assessment after 3 seconds
+    const timer = setTimeout(() => {
+      navigate("/risk-assessment", { 
+        state: { applicationId, applicationData } 
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [applicationData, applicationId, navigate]);
+
+  if (!applicationData || !applicationId) {
     return null;
   }
 
@@ -29,12 +40,12 @@ export default function Confirmation() {
         <div className="max-w-4xl mx-auto">
           {/* Success Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
               <CheckCircle className="w-8 h-8 text-secondary" />
             </div>
-            <h1 className="text-display text-secondary mb-2">Application Submitted Successfully!</h1>
+            <h1 className="text-display text-secondary mb-2">¡Solicitud Enviada Exitosamente!</h1>
             <p className="text-body text-muted-foreground">
-              Your credit application has been received and is being processed.
+              Tu solicitud de crédito ha sido recibida y está siendo procesada.
             </p>
           </div>
 
@@ -42,12 +53,12 @@ export default function Confirmation() {
           <div className="card-professional p-8 mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-heading">Application Details</h2>
-                <p className="text-caption text-muted-foreground">Reference ID: {applicationId}</p>
+                <h2 className="text-heading">Detalles de la Solicitud</h2>
+                <p className="text-caption text-muted-foreground">ID de Referencia: {applicationNumber}</p>
               </div>
               <div className="flex items-center space-x-2 text-amber-600">
                 <Clock className="w-5 h-5" />
-                <span className="status-pending">Processing</span>
+                <span className="status-pending">Procesando</span>
               </div>
             </div>
 
@@ -179,24 +190,31 @@ export default function Confirmation() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/">
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Home className="w-4 h-4 mr-2" />
-                Return to Dashboard
-              </Button>
-            </Link>
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <p className="text-body">Redirigiendo a evaluación de riesgo...</p>
+            </div>
             
-            <Link 
-              to="/risk-assessment" 
-              state={{ applicationId, applicationData }}
-            >
-              <Button className="btn-primary w-full sm:w-auto">
-                <Eye className="w-4 h-4 mr-2" />
-                View Risk Assessment
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Home className="w-4 h-4 mr-2" />
+                  Volver al Dashboard
+                </Button>
+              </Link>
+              
+              <Link 
+                to="/risk-assessment" 
+                state={{ applicationId, applicationData }}
+              >
+                <Button className="btn-primary w-full sm:w-auto">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Ver Evaluación de Riesgo
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Contact Information */}

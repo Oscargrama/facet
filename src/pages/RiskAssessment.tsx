@@ -3,6 +3,9 @@ import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   TrendingUp,
@@ -27,11 +30,13 @@ interface RiskFactor {
 
 export default function RiskAssessment() {
   const location = useLocation();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [overallScore, setOverallScore] = useState(0);
   const [recommendation, setRecommendation] = useState<"approve" | "review" | "deny">("review");
+  const [application, setApplication] = useState<any>(null);
   
-  const applicationId = location.state?.applicationId || "APP-123456";
+  const applicationId = location.state?.applicationId;
   const applicationData = location.state?.applicationData;
 
   // Risk factors for personal credit based on application data
@@ -99,29 +104,58 @@ export default function RiskAssessment() {
   ]);
 
   useEffect(() => {
-    // Simulate loading and calculation with weighted scoring
-    const timer = setTimeout(() => {
+    const calculateAndSave = async () => {
       // Calculate total weighted score
       const totalScore = riskFactors.reduce((total, factor) => {
         return total + (factor.score * factor.weight / 100);
       }, 0);
       
-      setOverallScore(Math.round(totalScore));
+      const roundedScore = Math.round(totalScore);
+      setOverallScore(roundedScore);
       
       // Decision based on total score
+      let decision: "approve" | "review" | "deny";
       if (totalScore >= 700) {
-        setRecommendation("approve");
+        decision = "approve";
       } else if (totalScore >= 600) {
-        setRecommendation("review");
+        decision = "review";
       } else {
-        setRecommendation("deny");
+        decision = "deny";
+      }
+      setRecommendation(decision);
+
+      // Save to database if we have applicationId
+      if (applicationId && user) {
+        try {
+          const { error } = await supabase
+            .from('credit_applications')
+            .update({
+              risk_score: roundedScore,
+              credit_history_factor_score: riskFactors[0].score,
+              monthly_income_factor_score: riskFactors[1].score,
+              debt_ratio_factor_score: riskFactors[2].score,
+              employment_stability_factor_score: riskFactors[3].score,
+              credit_purpose_factor_score: riskFactors[4].score,
+              decision: decision,
+              status: decision === 'approve' ? 'approved' : decision === 'deny' ? 'rejected' : 'under_review',
+              reviewed_at: new Date().toISOString(),
+            })
+            .eq('id', applicationId)
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+        } catch (error: any) {
+          console.error('Error saving risk assessment:', error);
+          toast.error('Error al guardar la evaluación');
+        }
       }
       
       setIsLoading(false);
-    }, 2000);
+    };
 
+    const timer = setTimeout(calculateAndSave, 2000);
     return () => clearTimeout(timer);
-  }, [riskFactors]);
+  }, [riskFactors, applicationId, user]);
 
   const getScoreColor = (score: number) => {
     if (score >= 700) return "text-secondary";

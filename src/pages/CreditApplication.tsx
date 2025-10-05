@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, Send, Calculator } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FormData {
   customerName: string;
@@ -26,6 +29,7 @@ interface FormData {
 
 export default function CreditApplication() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     customerName: "",
     customerEmail: "",
@@ -42,6 +46,45 @@ export default function CreditApplication() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load user profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            customerName: profile.full_name || "",
+            customerEmail: profile.email || "",
+            customerPhone: profile.phone || "",
+            customerAddress: profile.address || "",
+            employmentStatus: profile.employment_status || "",
+            monthlyIncome: profile.monthly_income?.toString() || "",
+            monthlyDebtPayment: profile.monthly_debt_payment?.toString() || "",
+            yearsInEmployment: profile.years_in_employment?.toString() || "",
+            creditHistoryScore: profile.credit_history_score?.toString() || "",
+          }));
+        }
+      } catch (error: any) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -49,13 +92,65 @@ export default function CreditApplication() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Navigate to confirmation page with application data
-    navigate("/confirmation", { state: { applicationData: formData } });
+    try {
+      // Update profile with latest information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.customerName,
+          phone: formData.customerPhone,
+          address: formData.customerAddress,
+          employment_status: formData.employmentStatus,
+          monthly_income: parseFloat(formData.monthlyIncome),
+          monthly_debt_payment: parseFloat(formData.monthlyDebtPayment || '0'),
+          years_in_employment: parseInt(formData.yearsInEmployment || '0'),
+          credit_history_score: parseInt(formData.creditHistoryScore),
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Create credit application
+      const applicationNumber = `APP-${Date.now()}`;
+      const { data: application, error: applicationError } = await supabase
+        .from('credit_applications')
+        .insert({
+          application_number: applicationNumber,
+          user_id: user.id,
+          credit_amount: parseFloat(formData.creditAmount),
+          purpose: formData.purpose,
+          term_months: 24, // Default term
+          monthly_income: parseFloat(formData.monthlyIncome),
+          monthly_debt_payment: parseFloat(formData.monthlyDebtPayment || '0'),
+          credit_history_score: parseInt(formData.creditHistoryScore),
+          years_in_employment: parseInt(formData.yearsInEmployment || '0'),
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (applicationError) throw applicationError;
+
+      toast.success('Solicitud creada exitosamente');
+      
+      // Navigate to confirmation page
+      navigate("/confirmation", { 
+        state: { 
+          applicationId: application.id,
+          applicationNumber: application.application_number,
+          applicationData: formData 
+        } 
+      });
+    } catch (error: any) {
+      console.error('Error submitting application:', error);
+      toast.error(error.message || 'Error al crear la solicitud');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isFormValid = formData.customerName && formData.customerEmail && formData.creditAmount;
