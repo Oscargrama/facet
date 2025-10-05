@@ -225,18 +225,25 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Application ID:", applicationId);
     console.log("Email HTML ready - length:", emailHtml.length);
 
-    // Store notification in a notifications table (optional)
-    // This allows you to track sent emails and retry if needed
-    const notificationData = {
-      recipient_email: customerEmail,
-      subject: `Contrato de Crédito - ${applicationId}`,
-      content: emailHtml,
-      application_id: applicationId,
-      status: 'pending',
-      created_at: new Date().toISOString()
-    };
+    // Store notification in database for tracking
+    const { data: notification, error: dbError } = await supabase
+      .from('email_notifications')
+      .insert({
+        recipient_email: customerEmail,
+        subject: `Contrato de Crédito - ${applicationId}`,
+        content: emailHtml,
+        application_id: applicationId,
+        status: 'sent',
+        sent_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    console.log("Email notification prepared successfully");
+    if (dbError) {
+      console.error("Error storing notification:", dbError);
+    } else {
+      console.log("Email notification stored successfully:", notification?.id);
+    }
 
     return new Response(
       JSON.stringify({

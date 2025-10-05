@@ -190,6 +190,42 @@ export type Database = {
           },
         ]
       }
+      email_notifications: {
+        Row: {
+          application_id: string | null
+          content: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          application_id?: string | null
+          content: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          application_id?: string | null
+          content?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_due: number

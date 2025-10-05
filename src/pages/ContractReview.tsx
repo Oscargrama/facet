@@ -199,9 +199,11 @@ export default function ContractReview() {
 
       toast.success("¡Contrato enviado exitosamente al cliente!");
       
+      console.log("Contract email sent:", data);
+      
       navigate("/", { 
         state: { 
-          message: `Contrato enviado exitosamente a ${applicationData?.customerEmail}. El cliente recibirá el contrato con los términos y condiciones en su correo.`,
+          message: `Contrato preparado y guardado para ${applicationData?.customerEmail}. El email con el contrato y términos está listo para ser enviado una vez que configures el dominio de correo.`,
           type: "success"
         }
       });
