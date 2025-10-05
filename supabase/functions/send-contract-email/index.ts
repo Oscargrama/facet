@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,14 +40,16 @@ const handler = async (req: Request): Promise<Response> => {
     }: ContractEmailRequest = await req.json();
 
     console.log("Sending contract email to:", customerEmail);
+    console.log("TEST MODE: Email will be sent to d.oinfante@gmail.com");
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Use Supabase's built-in email functionality
-    // First, we'll create a simple text-based email using Supabase Auth
+    // Convert base64 to buffer for attachment
+    const pdfBuffer = Uint8Array.from(atob(contractPdfBase64), c => c.charCodeAt(0));
+
     const emailHtml = `
 <!DOCTYPE html>
         <html>
@@ -217,19 +222,38 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
 `;
 
-    // For now, we'll store the email notification in the database
-    // and log the contract details. In production, you would use Supabase's
-    // email templates or a webhook to send actual emails.
+    // TEST MODE: Send to d.oinfante@gmail.com while domain is being validated
+    const testEmail = "d.oinfante@gmail.com";
     
-    console.log("Contract details prepared for:", customerEmail);
+    console.log("Sending email via Resend to:", testEmail);
+    console.log("Original recipient:", customerEmail);
     console.log("Application ID:", applicationId);
-    console.log("Email HTML ready - length:", emailHtml.length);
+
+    // Send email using Resend
+    const emailResponse = await resend.emails.send({
+      from: "Zentro Credit <onboarding@resend.dev>",
+      to: [testEmail], // TEST MODE: Always send to test email
+      subject: `[PRUEBA para ${customerEmail}] Contrato de Crédito - ${applicationId}`,
+      html: emailHtml,
+      attachments: [
+        {
+          filename: `Contrato_${applicationId}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    });
+
+    if (emailResponse.error) {
+      throw emailResponse.error;
+    }
+
+    console.log("Email sent successfully via Resend:", emailResponse.data?.id);
 
     // Store notification in database for tracking
     const { data: notification, error: dbError } = await supabase
       .from('email_notifications')
       .insert({
-        recipient_email: customerEmail,
+        recipient_email: customerEmail, // Store real email for reference
         subject: `Contrato de Crédito - ${applicationId}`,
         content: emailHtml,
         application_id: applicationId,
@@ -248,8 +272,10 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Contract email prepared successfully (Supabase mode)",
-        recipient: customerEmail,
+        emailId: emailResponse.data?.id,
+        message: "Contract email sent successfully (TEST MODE to d.oinfante@gmail.com)",
+        originalRecipient: customerEmail,
+        testRecipient: testEmail,
         applicationId: applicationId,
       }),
       {

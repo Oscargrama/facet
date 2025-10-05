@@ -272,7 +272,7 @@ export default function ContractReview() {
       
       navigate("/", { 
         state: { 
-          message: `Contrato preparado y guardado para ${customerData.email}. El email con el contrato y términos está listo para ser enviado una vez que configures el dominio de correo.`,
+          message: `✅ Email de prueba enviado a d.oinfante@gmail.com (destinatario real: ${customerData.email}). Revisa tu bandeja de entrada.`,
           type: "success"
         }
       });
