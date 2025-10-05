@@ -34,59 +34,68 @@ export default function RiskAssessment() {
   const applicationId = location.state?.applicationId || "APP-123456";
   const applicationData = location.state?.applicationData;
 
-  // Mock risk factors based on application data
+  // Risk factors for personal credit based on application data
   const [riskFactors] = useState<RiskFactor[]>([
     {
-      name: "Credit Score",
-      score: 720,
+      name: "Credit History Score",
+      score: applicationData?.creditHistoryScore ? parseInt(applicationData.creditHistoryScore) : 700,
       weight: 30,
-      status: "good",
-      description: "Strong credit history with minimal late payments"
+      status: applicationData?.creditHistoryScore && parseInt(applicationData.creditHistoryScore) >= 700 ? "good" : applicationData?.creditHistoryScore && parseInt(applicationData.creditHistoryScore) >= 600 ? "warning" : "risk",
+      description: applicationData?.creditHistoryScore 
+        ? parseInt(applicationData.creditHistoryScore) >= 800 ? "Historial crediticio excelente sin reportes negativos" 
+        : parseInt(applicationData.creditHistoryScore) >= 700 ? "Historial crediticio limitado o leve"
+        : "Historial crediticio con reportes negativos"
+        : "Historial crediticio no especificado"
     },
     {
-      name: "Income Stability", 
-      score: applicationData?.annualIncome ? Math.min(850, parseInt(applicationData.annualIncome) / 100) : 650,
+      name: "Monthly Income Score", 
+      score: applicationData?.monthlyIncome ? Math.min(800, parseInt(applicationData.monthlyIncome) / 100) : 600,
       weight: 25,
-      status: applicationData?.annualIncome && parseInt(applicationData.annualIncome) > 50000 ? "good" : "warning",
-      description: "Consistent income history with current employment"
+      status: applicationData?.monthlyIncome && parseInt(applicationData.monthlyIncome) > 3000 ? "good" : "warning",
+      description: "Evaluación basada en ingresos mensuales declarados"
     },
     {
-      name: "Debt-to-Income Ratio",
-      score: applicationData?.existingDebt && applicationData?.annualIncome 
-        ? Math.max(400, 800 - (parseInt(applicationData.existingDebt) / parseInt(applicationData.annualIncome) * 1000))
+      name: "Debt Ratio Score",
+      score: applicationData?.monthlyDebtPayment && applicationData?.monthlyIncome 
+        ? Math.max(400, 800 - (parseInt(applicationData.monthlyDebtPayment) / parseInt(applicationData.monthlyIncome) * 1000))
         : 700,
-      weight: 20,
-      status: "good",
-      description: "Manageable existing debt levels"
+      weight: 25,
+      status: applicationData?.monthlyDebtPayment && applicationData?.monthlyIncome
+        ? (parseInt(applicationData.monthlyDebtPayment) / parseInt(applicationData.monthlyIncome)) < 0.3 ? "good" : "warning"
+        : "good",
+      description: "Relación entre cuota mensual de deudas e ingreso mensual"
     },
     {
-      name: "Business Longevity",
-      score: applicationData?.yearsInBusiness ? Math.min(800, 500 + parseInt(applicationData.yearsInBusiness) * 50) : 600,
+      name: "Employment Stability Score",
+      score: applicationData?.yearsInEmployment ? Math.min(800, 500 + parseInt(applicationData.yearsInEmployment) * 50) : 600,
       weight: 15,
-      status: applicationData?.yearsInBusiness && parseInt(applicationData.yearsInBusiness) > 3 ? "good" : "warning",
-      description: "Established business with proven track record"
+      status: applicationData?.yearsInEmployment && parseInt(applicationData.yearsInEmployment) > 2 ? "good" : "warning",
+      description: "Estabilidad laboral basada en años en empleo actual"
     },
     {
-      name: "Loan Purpose",
-      score: applicationData?.purpose === "business-expansion" || applicationData?.purpose === "equipment-purchase" ? 750 : 650,
-      weight: 10,
+      name: "Credit Purpose Score",
+      score: applicationData?.purpose === "electrodomestico" || applicationData?.purpose === "tecnologia" ? 750 
+        : applicationData?.purpose === "educativo" ? 700 : 600,
+      weight: 5,
       status: "good",
-      description: "Productive use of credit funds"
+      description: "Propósito del crédito evaluado"
     }
   ]);
 
   useEffect(() => {
-    // Simulate loading and calculation
+    // Simulate loading and calculation with weighted scoring
     const timer = setTimeout(() => {
-      const calculatedScore = riskFactors.reduce((total, factor) => {
+      // Calculate total weighted score
+      const totalScore = riskFactors.reduce((total, factor) => {
         return total + (factor.score * factor.weight / 100);
-      }, 0) / riskFactors.length;
+      }, 0);
       
-      setOverallScore(Math.round(calculatedScore));
+      setOverallScore(Math.round(totalScore));
       
-      if (calculatedScore >= 700) {
+      // Decision based on total score
+      if (totalScore >= 700) {
         setRecommendation("approve");
-      } else if (calculatedScore >= 600) {
+      } else if (totalScore >= 600) {
         setRecommendation("review");
       } else {
         setRecommendation("deny");
@@ -118,11 +127,11 @@ export default function RiskAssessment() {
   const getRecommendationText = () => {
     switch (recommendation) {
       case "approve":
-        return "Recommended for Approval";
+        return "Solicitud aprobada automáticamente";
       case "review":
-        return "Requires Manual Review";
+        return "En revisión manual";
       case "deny":
-        return "Not Recommended";
+        return "Solicitud rechazada";
     }
   };
 
@@ -136,9 +145,9 @@ export default function RiskAssessment() {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-heading mb-2">Analyzing Risk Factors</h2>
+              <h2 className="text-heading mb-2">Analizando Factores de Riesgo</h2>
               <p className="text-body text-muted-foreground mb-6">
-                Our AI system is evaluating the credit application...
+                Nuestro sistema está evaluando la solicitud de crédito personal...
               </p>
               <div className="max-w-md mx-auto">
                 <Progress value={75} className="h-2" />
@@ -165,9 +174,9 @@ export default function RiskAssessment() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-display">Risk Assessment</h1>
+              <h1 className="text-display">Evaluación de Riesgo Crediticio</h1>
               <p className="text-body text-muted-foreground">
-                Application ID: {applicationId}
+                ID de Solicitud: {applicationId}
               </p>
             </div>
           </div>
@@ -178,7 +187,7 @@ export default function RiskAssessment() {
               {/* Overall Score */}
               <div className="card-professional p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-heading">Overall Risk Score</h2>
+                  <h2 className="text-heading">Puntuación de Riesgo Total</h2>
                   <div className="flex items-center space-x-2">
                     {getRecommendationIcon()}
                     <span className={`font-semibold ${
@@ -220,7 +229,7 @@ export default function RiskAssessment() {
 
               {/* Risk Factors */}
               <div className="card-professional p-6">
-                <h2 className="text-heading mb-6">Detailed Risk Analysis</h2>
+                <h2 className="text-heading mb-6">Análisis Detallado de Factores</h2>
                 <div className="space-y-6">
                   {riskFactors.map((factor, index) => (
                     <div key={index} className="border border-border rounded-lg p-4">
@@ -256,7 +265,7 @@ export default function RiskAssessment() {
             <div className="space-y-6">
               {/* Application Summary */}
               <div className="card-professional p-6">
-                <h3 className="text-heading mb-4">Application Summary</h3>
+                <h3 className="text-heading mb-4">Resumen de Solicitud</h3>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <User className="w-5 h-5 text-primary" />
@@ -276,38 +285,38 @@ export default function RiskAssessment() {
                     </div>
                   </div>
                   
-                  {applicationData?.businessName && (
+                  {applicationData?.monthlyIncome && (
                     <div className="flex items-center space-x-3">
                       <Building className="w-5 h-5 text-primary" />
                       <div>
-                        <p className="font-medium">{applicationData.businessName}</p>
-                        <p className="text-caption">{applicationData.businessType || "Business"}</p>
+                        <p className="font-medium">${parseInt(applicationData.monthlyIncome).toLocaleString()}/mes</p>
+                        <p className="text-caption">Ingreso Mensual</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex items-center space-x-3">
-                    <Clock className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">2 minutes ago</p>
-                      <p className="text-caption">Assessment Completed</p>
+                    <div className="flex items-center space-x-3">
+                      <Clock className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Hace 2 minutos</p>
+                        <p className="text-caption">Evaluación Completada</p>
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
 
               {/* Recommendation */}
               <div className="card-professional p-6">
-                <h3 className="text-heading mb-4">Recommended Action</h3>
+                <h3 className="text-heading mb-4">Acción Recomendada</h3>
                 
                 {recommendation === "approve" && (
                   <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 mb-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <CheckCircle className="w-5 h-5 text-secondary" />
-                      <span className="font-semibold text-secondary">Approve Credit</span>
+                      <span className="font-semibold text-secondary">Aprobar Crédito</span>
                     </div>
                     <p className="text-caption text-muted-foreground">
-                      Low risk profile meets approval criteria. Proceed with contract generation.
+                      Perfil de bajo riesgo cumple criterios de aprobación. Proceder con generación de contrato.
                     </p>
                   </div>
                 )}
@@ -316,10 +325,10 @@ export default function RiskAssessment() {
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      <span className="font-semibold text-amber-700">Manual Review Required</span>
+                      <span className="font-semibold text-amber-700">Revisión Manual Requerida</span>
                     </div>
                     <p className="text-caption text-amber-600">
-                      Medium risk factors detected. Additional review recommended before approval.
+                      Factores de riesgo medio detectados. Se recomienda revisión adicional antes de aprobar.
                     </p>
                   </div>
                 )}
@@ -328,10 +337,10 @@ export default function RiskAssessment() {
                   <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <XCircle className="w-5 h-5 text-destructive" />
-                      <span className="font-semibold text-destructive">Decline Application</span>
+                      <span className="font-semibold text-destructive">Rechazar Solicitud</span>
                     </div>
                     <p className="text-caption text-muted-foreground">
-                      High risk factors exceed approval threshold. Consider alternative options.
+                      Factores de alto riesgo exceden el umbral de aprobación. Considerar opciones alternativas.
                     </p>
                   </div>
                 )}
@@ -340,14 +349,14 @@ export default function RiskAssessment() {
                   {recommendation === "approve" && (
                     <Link to="/contract-review" state={{ applicationId, applicationData, riskScore: overallScore }}>
                       <Button className="btn-primary w-full">
-                        Generate Contract
+                        Generar Contrato
                       </Button>
                     </Link>
                   )}
                   
                   <Link to="/">
                     <Button variant="outline" className="w-full">
-                      Return to Dashboard
+                      Volver al Dashboard
                     </Button>
                   </Link>
                 </div>
@@ -355,27 +364,27 @@ export default function RiskAssessment() {
 
               {/* Risk Factors Legend */}
               <div className="card-professional p-6">
-                <h3 className="text-heading mb-4">Risk Level Guide</h3>
+                <h3 className="text-heading mb-4">Guía de Niveles de Riesgo</h3>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-secondary rounded-full" />
                     <div>
-                      <p className="text-caption font-medium">Low Risk (700+)</p>
-                      <p className="text-xs text-muted-foreground">Recommended for approval</p>
+                      <p className="text-caption font-medium">Bajo Riesgo (700+)</p>
+                      <p className="text-xs text-muted-foreground">Recomendado para aprobación</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-amber-500 rounded-full" />
                     <div>
-                      <p className="text-caption font-medium">Medium Risk (600-699)</p>
-                      <p className="text-xs text-muted-foreground">Requires manual review</p>
+                      <p className="text-caption font-medium">Riesgo Medio (600-699)</p>
+                      <p className="text-xs text-muted-foreground">Requiere revisión manual</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-destructive rounded-full" />
                     <div>
-                      <p className="text-caption font-medium">High Risk (&lt;600)</p>
-                      <p className="text-xs text-muted-foreground">Not recommended</p>
+                      <p className="text-caption font-medium">Alto Riesgo (&lt;600)</p>
+                      <p className="text-xs text-muted-foreground">No recomendado</p>
                     </div>
                   </div>
                 </div>

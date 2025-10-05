@@ -95,44 +95,39 @@ export default function Confirmation() {
                       <span className="text-body">{applicationData.purpose}</span>
                     </div>
                   )}
-                  {applicationData.annualIncome && (
+                  {applicationData.monthlyIncome && (
                     <div className="flex justify-between">
-                      <span className="text-caption">Annual Income</span>
-                      <span className="text-body">${parseInt(applicationData.annualIncome).toLocaleString()}</span>
+                      <span className="text-caption">Monthly Income</span>
+                      <span className="text-body">${parseInt(applicationData.monthlyIncome).toLocaleString()}</span>
                     </div>
                   )}
-                  {applicationData.existingDebt && (
+                  {applicationData.monthlyDebtPayment && (
                     <div className="flex justify-between">
-                      <span className="text-caption">Existing Debt</span>
-                      <span className="text-body">${parseInt(applicationData.existingDebt).toLocaleString()}</span>
+                      <span className="text-caption">Monthly Debt Payment</span>
+                      <span className="text-body">${parseInt(applicationData.monthlyDebtPayment).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Business Information */}
-            {applicationData.businessName && (
+            {/* Employment Information */}
+            {applicationData.yearsInEmployment && (
               <div className="mt-8 pt-6 border-t border-border">
-                <h3 className="font-semibold text-foreground mb-4">Business Information</h3>
+                <h3 className="font-semibold text-foreground mb-4">Employment Information</h3>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-caption">Business Name</span>
-                      <span className="text-body">{applicationData.businessName}</span>
+                      <span className="text-caption">Years in Employment</span>
+                      <span className="text-body">{applicationData.yearsInEmployment} years</span>
                     </div>
-                    {applicationData.businessType && (
+                    {applicationData.creditHistoryScore && (
                       <div className="flex justify-between">
-                        <span className="text-caption">Business Type</span>
-                        <span className="text-body">{applicationData.businessType}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    {applicationData.yearsInBusiness && (
-                      <div className="flex justify-between">
-                        <span className="text-caption">Years in Business</span>
-                        <span className="text-body">{applicationData.yearsInBusiness} years</span>
+                        <span className="text-caption">Credit History</span>
+                        <span className="text-body">
+                          {applicationData.creditHistoryScore === "850" ? "Excelente" : 
+                           applicationData.creditHistoryScore === "700" ? "Limitado" : "Negativo"}
+                        </span>
                       </div>
                     )}
                   </div>

@@ -17,11 +17,10 @@ interface FormData {
   creditAmount: string;
   purpose: string;
   employmentStatus: string;
-  annualIncome: string;
-  existingDebt: string;
-  businessName: string;
-  businessType: string;
-  yearsInBusiness: string;
+  monthlyIncome: string;
+  monthlyDebtPayment: string;
+  yearsInEmployment: string;
+  creditHistoryScore: string;
   notes: string;
 }
 
@@ -35,11 +34,10 @@ export default function CreditApplication() {
     creditAmount: "",
     purpose: "",
     employmentStatus: "",
-    annualIncome: "",
-    existingDebt: "",
-    businessName: "",
-    businessType: "",
-    yearsInBusiness: "",
+    monthlyIncome: "",
+    monthlyDebtPayment: "",
+    yearsInEmployment: "",
+    creditHistoryScore: "",
     notes: ""
   });
 
@@ -75,9 +73,9 @@ export default function CreditApplication() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-display">Credit Application</h1>
+            <h1 className="text-display">Personal Credit Application</h1>
             <p className="text-body text-muted-foreground">
-              Submit a new credit application for your customer
+              Submit a new personal credit application
             </p>
           </div>
         </div>
@@ -138,7 +136,7 @@ export default function CreditApplication() {
                       <SelectContent>
                         <SelectItem value="employed">Employed</SelectItem>
                         <SelectItem value="self-employed">Self-employed</SelectItem>
-                        <SelectItem value="business-owner">Business Owner</SelectItem>
+                        <SelectItem value="freelancer">Freelancer</SelectItem>
                         <SelectItem value="unemployed">Unemployed</SelectItem>
                         <SelectItem value="retired">Retired</SelectItem>
                       </SelectContent>
@@ -167,7 +165,7 @@ export default function CreditApplication() {
                     <Input
                       id="creditAmount"
                       type="number"
-                      placeholder="25000"
+                      placeholder="5000"
                       value={formData.creditAmount}
                       onChange={(e) => handleInputChange("creditAmount", e.target.value)}
                       className="input-professional"
@@ -176,25 +174,25 @@ export default function CreditApplication() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="annualIncome">Annual Income</Label>
+                    <Label htmlFor="monthlyIncome">Monthly Income</Label>
                     <Input
-                      id="annualIncome"
+                      id="monthlyIncome"
                       type="number"
-                      placeholder="75000"
-                      value={formData.annualIncome}
-                      onChange={(e) => handleInputChange("annualIncome", e.target.value)}
+                      placeholder="3000"
+                      value={formData.monthlyIncome}
+                      onChange={(e) => handleInputChange("monthlyIncome", e.target.value)}
                       className="input-professional"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="existingDebt">Existing Debt</Label>
+                    <Label htmlFor="monthlyDebtPayment">Monthly Debt Payment</Label>
                     <Input
-                      id="existingDebt"
+                      id="monthlyDebtPayment"
                       type="number"
-                      placeholder="15000"
-                      value={formData.existingDebt}
-                      onChange={(e) => handleInputChange("existingDebt", e.target.value)}
+                      placeholder="500"
+                      value={formData.monthlyDebtPayment}
+                      onChange={(e) => handleInputChange("monthlyDebtPayment", e.target.value)}
                       className="input-professional"
                     />
                   </div>
@@ -209,64 +207,47 @@ export default function CreditApplication() {
                         <SelectValue placeholder="Select purpose" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="business-expansion">Business Expansion</SelectItem>
-                        <SelectItem value="equipment-purchase">Equipment Purchase</SelectItem>
-                        <SelectItem value="inventory">Inventory</SelectItem>
-                        <SelectItem value="working-capital">Working Capital</SelectItem>
-                        <SelectItem value="personal">Personal Use</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="electrodomestico">Electrodoméstico</SelectItem>
+                        <SelectItem value="tecnologia">Tecnología</SelectItem>
+                        <SelectItem value="educativo">Educativo</SelectItem>
+                        <SelectItem value="otros">Otros</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
 
-              {/* Business Information */}
+              {/* Employment & Credit History */}
               <div className="card-professional p-6">
-                <h2 className="text-heading mb-6">Business Information</h2>
+                <h2 className="text-heading mb-6">Employment & Credit History</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="businessName">Business Name</Label>
+                    <Label htmlFor="yearsInEmployment">Years in Current Employment</Label>
                     <Input
-                      id="businessName"
-                      placeholder="Enter business name"
-                      value={formData.businessName}
-                      onChange={(e) => handleInputChange("businessName", e.target.value)}
+                      id="yearsInEmployment"
+                      type="number"
+                      placeholder="3"
+                      value={formData.yearsInEmployment}
+                      onChange={(e) => handleInputChange("yearsInEmployment", e.target.value)}
                       className="input-professional"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="businessType">Business Type</Label>
+                    <Label htmlFor="creditHistoryScore">Credit History</Label>
                     <Select
-                      value={formData.businessType}
-                      onValueChange={(value) => handleInputChange("businessType", value)}
+                      value={formData.creditHistoryScore}
+                      onValueChange={(value) => handleInputChange("creditHistoryScore", value)}
                     >
                       <SelectTrigger className="input-professional">
-                        <SelectValue placeholder="Select business type" />
+                        <SelectValue placeholder="Select credit history" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="retail">Retail</SelectItem>
-                        <SelectItem value="restaurant">Restaurant</SelectItem>
-                        <SelectItem value="service">Service</SelectItem>
-                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="850">Excelente (sin reportes negativos)</SelectItem>
+                        <SelectItem value="700">Limitado o leve</SelectItem>
+                        <SelectItem value="500">Negativo</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="yearsInBusiness">Years in Business</Label>
-                    <Input
-                      id="yearsInBusiness"
-                      type="number"
-                      placeholder="5"
-                      value={formData.yearsInBusiness}
-                      onChange={(e) => handleInputChange("yearsInBusiness", e.target.value)}
-                      className="input-professional"
-                    />
                   </div>
                   
                   <div className="md:col-span-2 space-y-2">
@@ -325,8 +306,8 @@ export default function CreditApplication() {
                   <span className="text-body">{formData.purpose || "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-caption">Business</span>
-                  <span className="text-body">{formData.businessName || "—"}</span>
+                  <span className="text-caption">Monthly Income</span>
+                  <span className="text-body">{formData.monthlyIncome ? `$${parseInt(formData.monthlyIncome).toLocaleString()}` : "—"}</span>
                 </div>
               </div>
             </div>
@@ -339,14 +320,22 @@ export default function CreditApplication() {
               <p className="text-caption mb-4">
                 Estimated monthly payment for requested amount
               </p>
-              {formData.creditAmount && (
-                <div className="bg-primary/10 rounded-lg p-4">
-                  <div className="text-center">
-                    <p className="text-caption">Estimated Monthly Payment</p>
-                    <p className="text-2xl font-bold text-primary">
-                      ${Math.round((parseInt(formData.creditAmount) * 0.08) / 12).toLocaleString()}
+              {formData.creditAmount && formData.monthlyIncome && (
+                <div className="space-y-3">
+                  <div className="bg-primary/10 rounded-lg p-4">
+                    <div className="text-center">
+                      <p className="text-caption">Estimated Monthly Payment</p>
+                      <p className="text-2xl font-bold text-primary">
+                        ${Math.round((parseInt(formData.creditAmount) * 1.08) / 12).toLocaleString()}
+                      </p>
+                      <p className="text-caption">Based on 8% APR, 12 months</p>
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-caption">Debt-to-Income Impact</p>
+                    <p className="text-sm font-semibold">
+                      {((Math.round((parseInt(formData.creditAmount) * 1.08) / 12) / parseInt(formData.monthlyIncome)) * 100).toFixed(1)}%
                     </p>
-                    <p className="text-caption">Based on 8% APR, 12 months</p>
                   </div>
                 </div>
               )}
