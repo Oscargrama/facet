@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -32,10 +34,16 @@ import {
 export default function ContractReview() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const applicationId = location.state?.applicationId || "APP-123456";
   const applicationData = location.state?.applicationData;
   const riskScore = location.state?.riskScore || 720;
+  
+  // Real data from database
+  const [realApplicationData, setRealApplicationData] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
   const [contractTerms, setContractTerms] = useState({
@@ -60,10 +68,60 @@ export default function ContractReview() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState<"idle" | "signing" | "uploading" | "anchoring" | "completed">("idle");
 
+  // Load real data from database
+  useEffect(() => {
+    const loadRealData = async () => {
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      try {
+        // Load user profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        setUserProfile(profile);
+
+        // Load application data if we have an applicationId
+        if (applicationId && applicationId !== "APP-123456") {
+          const { data: application, error: appError } = await supabase
+            .from('credit_applications')
+            .select('*')
+            .eq('application_number', applicationId)
+            .single();
+
+          if (appError) throw appError;
+          setRealApplicationData(application);
+          
+          // Update contract terms based on real data
+          if (application) {
+            setContractTerms(prev => ({
+              ...prev,
+              termLength: application.term_months?.toString() || prev.termLength,
+            }));
+          }
+        }
+      } catch (error: any) {
+        console.error('Error loading real data:', error);
+        toast.error("Error al cargar los datos de la aplicación");
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadRealData();
+  }, [user, applicationId]);
+
   // Calculate monthly payment
   const calculateMonthlyPayment = () => {
-    if (applicationData?.creditAmount && contractTerms.interestRate && contractTerms.termLength) {
-      const principal = parseInt(applicationData.creditAmount);
+    const creditAmount = realApplicationData?.credit_amount || applicationData?.creditAmount;
+    if (creditAmount && contractTerms.interestRate && contractTerms.termLength) {
+      const principal = parseFloat(creditAmount);
       const monthlyRate = parseFloat(contractTerms.interestRate) / 100 / 12;
       const numPayments = parseInt(contractTerms.termLength);
       
@@ -77,6 +135,18 @@ export default function ContractReview() {
 
   const monthlyPayment = calculateMonthlyPayment();
 
+  // Get real customer data
+  const getCustomerData = () => {
+    return {
+      name: userProfile?.full_name || applicationData?.customerName || "Cliente",
+      email: userProfile?.email || applicationData?.customerEmail || user?.email || "",
+      phone: userProfile?.phone || applicationData?.customerPhone || "N/A",
+      creditAmount: realApplicationData?.credit_amount || applicationData?.creditAmount || 0,
+    };
+  };
+
+  const customerData = getCustomerData();
+
   const handleSignContract = async () => {
     if (!wallet.isConnected) {
       toast.error("Por favor conecta tu wallet primero");
@@ -87,13 +157,13 @@ export default function ContractReview() {
     setProcessStep("signing");
 
     try {
-      // Generate contract content
+      // Generate contract content with real data
       const contractData = {
         applicationId,
-        customerName: applicationData?.customerName || "John Doe",
-        customerEmail: applicationData?.customerEmail || "john@example.com",
-        customerPhone: applicationData?.customerPhone || "+1 (555) 123-4567",
-        creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+        customerName: customerData.name,
+        customerEmail: customerData.email,
+        customerPhone: customerData.phone,
+        creditAmount: parseFloat(customerData.creditAmount).toLocaleString(),
         interestRate: contractTerms.interestRate,
         termLength: contractTerms.termLength,
         monthlyPayment: monthlyPayment.toLocaleString(),
@@ -153,10 +223,10 @@ export default function ContractReview() {
       // Generate PDF contract
       const contractData = {
         applicationId,
-        customerName: applicationData?.customerName || "John Doe",
-        customerEmail: applicationData?.customerEmail || "john@example.com",
-        customerPhone: applicationData?.customerPhone || "+1 (555) 123-4567",
-        creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+        customerName: customerData.name,
+        customerEmail: customerData.email,
+        customerPhone: customerData.phone,
+        creditAmount: parseFloat(customerData.creditAmount).toLocaleString(),
         interestRate: contractTerms.interestRate,
         termLength: contractTerms.termLength,
         monthlyPayment: monthlyPayment.toLocaleString(),
@@ -178,15 +248,14 @@ export default function ContractReview() {
 
       toast.info("Enviando correo al cliente...");
 
-      // Call edge function to send email
-      const { supabase } = await import("@/integrations/supabase/client");
+      // Call edge function to send email with real data
       const { data, error } = await supabase.functions.invoke('send-contract-email', {
         body: {
-          customerName: applicationData?.customerName || "John Doe",
-          customerEmail: applicationData?.customerEmail || "john@example.com",
+          customerName: customerData.name,
+          customerEmail: customerData.email,
           contractPdfBase64: base64,
           applicationId,
-          creditAmount: applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000",
+          creditAmount: parseFloat(customerData.creditAmount).toLocaleString(),
           termLength: contractTerms.termLength,
           interestRate: contractTerms.interestRate,
           monthlyPayment: monthlyPayment.toLocaleString(),
@@ -203,7 +272,7 @@ export default function ContractReview() {
       
       navigate("/", { 
         state: { 
-          message: `Contrato preparado y guardado para ${applicationData?.customerEmail}. El email con el contrato y términos está listo para ser enviado una vez que configures el dominio de correo.`,
+          message: `Contrato preparado y guardado para ${customerData.email}. El email con el contrato y términos está listo para ser enviado una vez que configures el dominio de correo.`,
           type: "success"
         }
       });
