@@ -149,7 +149,7 @@ export default function ContractReview() {
   const handleSendContract = async () => {
     setIsSending(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
-    navigate("/dashboard", { 
+    navigate("/", { 
       state: { 
         message: "Contract sent successfully to customer for signature",
         type: "success"
@@ -525,7 +525,7 @@ export default function ContractReview() {
                       )}
                     </Button>
                     
-                    <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                    <Button variant="outline" onClick={() => navigate("/")}>
                       Guardar Borrador
                     </Button>
                   </div>
