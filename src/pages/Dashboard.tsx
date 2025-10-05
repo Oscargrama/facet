@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import StatsCard from "@/components/StatsCard";
@@ -25,6 +25,12 @@ interface Application {
   status: string;
   risk_score: number | null;
   submitted_at: string;
+  term_months: number;
+  monthly_income: number;
+  monthly_debt_payment: number;
+  credit_history_score: number;
+  years_in_employment: number;
+  purpose: string;
   profiles: {
     full_name: string;
   };
@@ -32,6 +38,7 @@ interface Application {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -280,7 +287,24 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate('/risk-assessment', {
+                            state: {
+                              applicationId: app.id,
+                              applicationData: {
+                                creditAmount: app.credit_amount,
+                                termMonths: app.term_months,
+                                monthlyIncome: app.monthly_income,
+                                monthlyDebtPayment: app.monthly_debt_payment,
+                                creditHistoryScore: app.credit_history_score,
+                                yearsInEmployment: app.years_in_employment,
+                                purpose: app.purpose
+                              }
+                            }
+                          })}
+                        >
                           <Eye className="w-4 h-4 mr-2" />
                           Ver
                         </Button>
