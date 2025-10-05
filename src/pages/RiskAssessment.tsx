@@ -49,10 +49,26 @@ export default function RiskAssessment() {
     },
     {
       name: "Monthly Income Score", 
-      score: applicationData?.monthlyIncome ? Math.min(800, parseInt(applicationData.monthlyIncome) / 100) : 600,
+      score: (() => {
+        if (!applicationData?.monthlyIncome) return 600;
+        const incomeCOP = parseInt(applicationData.monthlyIncome);
+        const minIncome = 800_000;
+        const maxIncome = 4_000_000;
+        const minScore = 400;
+        const maxScore = 800;
+        
+        if (incomeCOP <= minIncome) return minScore;
+        if (incomeCOP >= maxIncome) return maxScore;
+        
+        const slope = (maxScore - minScore) / (maxIncome - minIncome);
+        const score = minScore + (incomeCOP - minIncome) * slope;
+        return Math.round(Math.max(minScore, Math.min(maxScore, score)));
+      })(),
       weight: 25,
-      status: applicationData?.monthlyIncome && parseInt(applicationData.monthlyIncome) > 3000 ? "good" : "warning",
-      description: "Evaluación basada en ingresos mensuales declarados"
+      status: applicationData?.monthlyIncome && parseInt(applicationData.monthlyIncome) >= 2_500_000 ? "good" 
+        : applicationData?.monthlyIncome && parseInt(applicationData.monthlyIncome) >= 1_500_000 ? "warning" 
+        : "risk",
+      description: "Evaluación basada en ingresos mensuales declarados (COP 800K - 4M)"
     },
     {
       name: "Debt Ratio Score",
