@@ -35,9 +35,32 @@ export default function RiskAssessment() {
   const [overallScore, setOverallScore] = useState(0);
   const [recommendation, setRecommendation] = useState<"approve" | "review" | "deny">("review");
   const [application, setApplication] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   const applicationId = location.state?.applicationId;
   const applicationData = location.state?.applicationData;
+
+  // Load user profile
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error: any) {
+        console.error('Error loading profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   // Risk factors for personal credit based on application data
   const [riskFactors] = useState<RiskFactor[]>([
@@ -320,8 +343,8 @@ export default function RiskAssessment() {
                   <div className="flex items-center space-x-3">
                     <User className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="font-medium">{applicationData?.customerName || "John Doe"}</p>
-                      <p className="text-caption">{applicationData?.customerEmail || "john@example.com"}</p>
+                      <p className="font-medium">{userProfile?.full_name || "Cargando..."}</p>
+                      <p className="text-caption">{userProfile?.email || ""}</p>
                     </div>
                   </div>
                   
