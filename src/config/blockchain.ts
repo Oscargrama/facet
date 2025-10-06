@@ -11,7 +11,7 @@ export const POLKADOT_CONFIG = {
 };
 
 // Contract address - update after deployment
-export const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; // TODO: Update after deployment
+export const CONTRACT_ADDRESS = "0xc46230b7c0f61A960DaDC7c19833A442dc43320D"; // TODO: Update after deployment
 
 export const CONTRACT_ABI = [
   "function registerCredit(string memory cid, string memory pdfHash) external",
