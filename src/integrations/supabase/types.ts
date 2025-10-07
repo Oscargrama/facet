@@ -195,6 +195,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_contracts_application_id"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
         ]
       }
       credit_applications: {
