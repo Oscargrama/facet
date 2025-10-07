@@ -36,7 +36,7 @@ export default function ContractReview() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const applicationId = location.state?.applicationId || "APP-123456";
+  const applicationId = location.state?.applicationId;
   const applicationData = location.state?.applicationData;
   const riskScore = location.state?.riskScore || 720;
   
@@ -88,7 +88,7 @@ export default function ContractReview() {
         setUserProfile(profile);
 
         // Load application data if we have an applicationId
-        if (applicationId && applicationId !== "APP-123456") {
+        if (applicationId) {
           // Try to load by UUID first (from RiskAssessment navigation)
           const { data: application, error: appError } = await supabase
             .from('credit_applications')
@@ -158,9 +158,9 @@ export default function ContractReview() {
   // Get real customer data
   const getCustomerData = () => {
     return {
-      name: userProfile?.full_name || applicationData?.customerName || "Cliente",
+      name: userProfile?.full_name || applicationData?.customerName || user?.email || "",
       email: userProfile?.email || applicationData?.customerEmail || user?.email || "",
-      phone: userProfile?.phone || applicationData?.customerPhone || "N/A",
+      phone: userProfile?.phone || applicationData?.customerPhone || "",
       creditAmount: realApplicationData?.credit_amount || applicationData?.creditAmount || 0,
     };
   };
@@ -466,7 +466,7 @@ export default function ContractReview() {
                 <div className="text-center mb-8 pb-6 border-b border-border">
                   <h2 className="text-3xl font-bold text-foreground mb-2">Credit Agreement</h2>
                   <p className="text-body text-muted-foreground">
-                    Contract ID: {applicationId}-CONTRACT
+                    Contract ID: {realApplicationData?.application_number ? `${realApplicationData.application_number}-CONTRACT` : applicationId ? `${applicationId}-CONTRACT` : 'Pending'}
                   </p>
                   <p className="text-caption text-muted-foreground">
                     Generated on {new Date().toLocaleDateString()}
@@ -492,8 +492,7 @@ export default function ContractReview() {
                       <p className="text-body">{customerData.name}</p>
                       <p className="text-caption text-muted-foreground">
                         {customerData.email}<br />
-                        {customerData.phone}<br />
-                        {userProfile?.address || "Address on file"}
+                        {customerData.phone}{userProfile?.address ? (<><br />{userProfile.address}</>) : null}
                       </p>
                     </div>
                   </div>
@@ -761,8 +760,8 @@ export default function ContractReview() {
                   <div className="flex items-center space-x-3">
                     <User className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="font-medium">{applicationData?.customerName || "John Doe"}</p>
-                      <p className="text-caption">{applicationData?.customerEmail || "john@example.com"}</p>
+                      <p className="font-medium">{customerData.name}</p>
+                      <p className="text-caption">{customerData.email}</p>
                     </div>
                   </div>
                   
@@ -770,7 +769,7 @@ export default function ContractReview() {
                     <DollarSign className="w-5 h-5 text-primary" />
                     <div>
                       <p className="font-medium">
-                        ${applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000"}
+                        ${parseInt(customerData.creditAmount).toLocaleString()}
                       </p>
                       <p className="text-caption">Credit Amount</p>
                     </div>
@@ -828,13 +827,13 @@ export default function ContractReview() {
                   <div className="flex justify-between">
                     <span className="text-caption">Principal</span>
                     <span className="font-medium">
-                      ${applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000"}
+                      ${parseInt(customerData.creditAmount).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-caption">Total Interest</span>
                     <span className="font-medium">
-                      ${(monthlyPayment * parseInt(contractTerms.termLength) - (applicationData?.creditAmount ? parseInt(applicationData.creditAmount) : 25000)).toLocaleString()}
+                      ${(monthlyPayment * parseInt(contractTerms.termLength) - parseInt(customerData.creditAmount)).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
