@@ -398,11 +398,19 @@ export default function RiskAssessment() {
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      <span className="font-semibold text-amber-700">Revisión Manual Requerida</span>
+                      <span className="font-semibold text-amber-700">Riesgo Medio - Aprobación Condicional</span>
                     </div>
-                    <p className="text-caption text-amber-600">
-                      Factores de riesgo medio detectados. Se recomienda revisión adicional antes de aprobar.
+                    <p className="text-caption text-amber-600 mb-3">
+                      El perfil muestra riesgo medio. Se puede aprobar con condiciones ajustadas: tasa de interés +2% adicional.
                     </p>
+                    <div className="bg-white rounded p-3 border border-amber-200">
+                      <p className="text-xs text-amber-700 font-medium mb-1">Condiciones especiales:</p>
+                      <ul className="text-xs text-amber-600 space-y-1 list-disc list-inside">
+                        <li>Tasa de interés: {applicationData?.interestRate ? (parseFloat(applicationData.interestRate) + 2).toFixed(1) : '18.0'}% anual (ajustada por riesgo)</li>
+                        <li>Seguimiento mensual obligatorio</li>
+                        <li>Opción de refinanciamiento tras 6 meses de pagos puntuales</li>
+                      </ul>
+                    </div>
                   </div>
                 )}
 
@@ -423,6 +431,22 @@ export default function RiskAssessment() {
                     <Link to="/contract-review" state={{ applicationId, applicationData, riskScore: overallScore }}>
                       <Button className="btn-primary w-full">
                         Generar Contrato
+                      </Button>
+                    </Link>
+                  )}
+                  
+                  {recommendation === "review" && (
+                    <Link to="/contract-review" state={{ 
+                      applicationId, 
+                      applicationData: {
+                        ...applicationData,
+                        interestRate: applicationData?.interestRate ? (parseFloat(applicationData.interestRate) + 2).toString() : '18.0',
+                        adjustedForRisk: true
+                      }, 
+                      riskScore: overallScore 
+                    }}>
+                      <Button className="btn-primary w-full bg-amber-600 hover:bg-amber-700">
+                        Aprobar con Condiciones Especiales
                       </Button>
                     </Link>
                   )}
