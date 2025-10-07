@@ -327,27 +327,53 @@ export default function SignContract() {
                 </p>
               </div>
 
-              {contract && (
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-caption text-muted-foreground">Monto del Crédito</p>
-                      <p className="text-heading text-foreground">${contract.credit_amount?.toLocaleString()}</p>
+              {!contract ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                  <p className="text-muted-foreground">Cargando detalles del contrato...</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Contract Details */}
+                  <div className="bg-muted/30 rounded-lg p-6 space-y-4">
+                    <h3 className="text-lg font-semibold mb-4">Detalles del Contrato</h3>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <p className="text-caption text-muted-foreground">Monto del Crédito</p>
+                        <p className="text-heading text-foreground">${contract.credit_amount?.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <p className="text-caption text-muted-foreground">Plazo</p>
+                        <p className="text-heading text-foreground">{contract.term_months} meses</p>
+                      </div>
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <p className="text-caption text-muted-foreground">Tasa de Interés</p>
+                        <p className="text-heading text-foreground">{contract.interest_rate}% anual</p>
+                      </div>
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <p className="text-caption text-muted-foreground">Pago Mensual</p>
+                        <p className="text-heading text-foreground">${contract.monthly_payment?.toLocaleString()}</p>
+                      </div>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-caption text-muted-foreground">Plazo</p>
-                      <p className="text-heading text-foreground">{contract.term_months} meses</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-caption text-muted-foreground">Tasa de Interés</p>
-                      <p className="text-heading text-foreground">{contract.interest_rate}% anual</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-caption text-muted-foreground">Pago Mensual</p>
-                      <p className="text-heading text-foreground">${contract.monthly_payment?.toLocaleString()}</p>
-                    </div>
+
+                    {contract.pdf_url && (
+                      <div className="pt-4 border-t border-border">
+                        <a 
+                          href={contract.pdf_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-2 text-primary hover:underline"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>Ver PDF del Contrato Completo</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Important Notice */}
                   <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
                     <div className="flex-1">
@@ -358,14 +384,16 @@ export default function SignContract() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  {/* Terms Acceptance */}
+                  <div className="flex items-start space-x-3 p-4 bg-background border border-border rounded-lg">
                     <Checkbox 
                       id="terms" 
                       checked={acceptedTerms}
                       onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                      className="mt-1"
                     />
-                    <Label htmlFor="terms" className="text-sm cursor-pointer">
-                      He leído y acepto los términos y condiciones del contrato
+                    <Label htmlFor="terms" className="text-sm cursor-pointer flex-1">
+                      He leído y acepto los términos y condiciones del contrato. Confirmo que he revisado todos los detalles incluyendo el monto del crédito, plazo, tasa de interés y pago mensual.
                     </Label>
                   </div>
                 </div>
@@ -373,7 +401,7 @@ export default function SignContract() {
 
               <Button
                 onClick={() => setCurrentStep("phone")}
-                disabled={!acceptedTerms}
+                disabled={!acceptedTerms || !contract}
                 className="w-full btn-primary"
               >
                 Proceder a Firmar
