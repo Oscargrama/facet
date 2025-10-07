@@ -89,21 +89,41 @@ export default function ContractReview() {
 
         // Load application data if we have an applicationId
         if (applicationId && applicationId !== "APP-123456") {
+          // Try to load by UUID first (from RiskAssessment navigation)
           const { data: application, error: appError } = await supabase
             .from('credit_applications')
             .select('*')
-            .eq('application_number', applicationId)
+            .eq('id', applicationId)
             .single();
 
-          if (appError) throw appError;
-          setRealApplicationData(application);
-          
-          // Update contract terms based on real data
-          if (application) {
-            setContractTerms(prev => ({
-              ...prev,
-              termLength: application.term_months?.toString() || prev.termLength,
-            }));
+          if (appError) {
+            console.error('Error loading application:', appError);
+            // If not found by ID, maybe it's an application_number
+            const { data: appByNumber, error: numberError } = await supabase
+              .from('credit_applications')
+              .select('*')
+              .eq('application_number', applicationId)
+              .single();
+            
+            if (!numberError && appByNumber) {
+              setRealApplicationData(appByNumber);
+              if (appByNumber) {
+                setContractTerms(prev => ({
+                  ...prev,
+                  termLength: appByNumber.term_months?.toString() || prev.termLength,
+                }));
+              }
+            }
+          } else {
+            setRealApplicationData(application);
+            
+            // Update contract terms based on real data
+            if (application) {
+              setContractTerms(prev => ({
+                ...prev,
+                termLength: application.term_months?.toString() || prev.termLength,
+              }));
+            }
           }
         }
       } catch (error: any) {
@@ -407,7 +427,7 @@ export default function ContractReview() {
               <div>
                 <h1 className="text-display">Digital Contract</h1>
                 <p className="text-body text-muted-foreground">
-                  Review and finalize contract terms for {applicationData?.customerName || "Customer"}
+                  Review and finalize contract terms for {customerData.name}
                 </p>
               </div>
             </div>
@@ -469,11 +489,11 @@ export default function ContractReview() {
                     
                     <div className="bg-muted/50 rounded-lg p-4">
                       <h4 className="font-semibold text-foreground mb-2">Borrower</h4>
-                      <p className="text-body">{applicationData?.customerName || "John Doe"}</p>
+                      <p className="text-body">{customerData.name}</p>
                       <p className="text-caption text-muted-foreground">
-                        {applicationData?.customerEmail || "john@example.com"}<br />
-                        {applicationData?.customerPhone || "+1 (555) 123-4567"}<br />
-                        {applicationData?.customerAddress || "Address on file"}
+                        {customerData.email}<br />
+                        {customerData.phone}<br />
+                        {userProfile?.address || "Address on file"}
                       </p>
                     </div>
                   </div>
@@ -546,7 +566,7 @@ export default function ContractReview() {
                         <div>
                           <p className="text-caption text-muted-foreground">Principal Amount</p>
                           <p className="text-xl font-bold text-foreground">
-                            ${applicationData?.creditAmount ? parseInt(applicationData.creditAmount).toLocaleString() : "25,000"}
+                            ${parseInt(customerData.creditAmount).toLocaleString()}
                           </p>
                         </div>
                         <div>
