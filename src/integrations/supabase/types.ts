@@ -207,6 +207,7 @@ export type Database = {
       credit_applications: {
         Row: {
           application_number: string
+          client_name: string | null
           created_at: string
           credit_amount: number
           credit_history_factor_score: number | null
@@ -231,6 +232,7 @@ export type Database = {
         }
         Insert: {
           application_number: string
+          client_name?: string | null
           created_at?: string
           credit_amount: number
           credit_history_factor_score?: number | null
@@ -255,6 +257,7 @@ export type Database = {
         }
         Update: {
           application_number?: string
+          client_name?: string | null
           created_at?: string
           credit_amount?: number
           credit_history_factor_score?: number | null

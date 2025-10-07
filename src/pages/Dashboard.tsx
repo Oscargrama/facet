@@ -22,6 +22,7 @@ import {
 interface Application {
   id: string;
   application_number: string;
+  client_name: string;
   credit_amount: number;
   status: string;
   risk_score: number | null;
@@ -32,9 +33,6 @@ interface Application {
   credit_history_score: number;
   years_in_employment: number;
   purpose: string;
-  profiles: {
-    full_name: string;
-  };
 }
 
 export default function Dashboard() {
@@ -58,12 +56,7 @@ export default function Dashboard() {
         // Load applications
         const { data: apps, error } = await supabase
           .from('credit_applications')
-          .select(`
-            *,
-            profiles!credit_applications_user_id_fkey (
-              full_name
-            )
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .order('submitted_at', { ascending: false })
           .limit(10);
@@ -372,7 +365,7 @@ export default function Dashboard() {
                         <span className="font-mono text-sm">{app.application_number}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="font-medium">{app.profiles?.full_name}</span>
+                        <span className="font-medium">{app.client_name}</span>
                       </td>
                       <td className="py-4 px-4">
                         <span className="font-semibold text-foreground">

@@ -121,6 +121,7 @@ export default function CreditApplication() {
         .insert({
           application_number: applicationNumber,
           user_id: user.id,
+          client_name: formData.customerName,
           credit_amount: parseFloat(formData.creditAmount),
           purpose: formData.purpose,
           term_months: 24, // Default term
