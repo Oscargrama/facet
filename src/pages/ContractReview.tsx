@@ -251,8 +251,8 @@ export default function ContractReview() {
         term_months: applicationData?.termMonths || parseInt(contractTerms.termLength)
       };
 
-      if (!appData) {
-        throw new Error("Datos de aplicación no disponibles");
+      if (!appData || !appData.id) {
+        throw new Error("ID de aplicación no disponible. Por favor, regresa al dashboard y vuelve a intentar.");
       }
 
       toast.info("Creando contrato en base de datos...");
