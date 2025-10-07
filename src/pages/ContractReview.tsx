@@ -68,6 +68,7 @@ export default function ContractReview() {
   const [explorerUrl, setExplorerUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState<"idle" | "signing" | "uploading" | "anchoring" | "completed">("idle");
+  const [alreadySigned, setAlreadySigned] = useState(false);
 
   // Load real data from database
   useEffect(() => {
@@ -106,6 +107,20 @@ export default function ContractReview() {
               termLength: contract.term_months?.toString() || prev.termLength,
               interestRate: contract.interest_rate?.toString() || prev.interestRate,
             }));
+
+            // Check if contract is already signed and anchored in blockchain
+            if (contract.blockchain_tx_hash && contract.signed_at) {
+              setAlreadySigned(true);
+              setContractSigned(true);
+              setBlockchainTxHash(contract.blockchain_tx_hash);
+              setBlockNumber(contract.block_number || null);
+              setIpfsCID(contract.ipfs_cid || null);
+              setProcessStep("completed");
+              
+              // Build explorer URL from blockchain config
+              const EXPLORER_URL = "https://polkadot.js.org/apps/?rpc=wss://paseo-asset-hub-rpc.polkadot.io#/explorer";
+              setExplorerUrl(`${EXPLORER_URL}/query/${contract.blockchain_tx_hash}`);
+            }
           }
         }
         // Load application data if we have an applicationId
@@ -671,58 +686,107 @@ export default function ContractReview() {
                       Blockchain Integration
                     </h3>
                     
-                    <ContractTimeline steps={getTimelineSteps()} />
-                    
-                    {blockchainTxHash && (
-                      <div className="mt-6 p-4 bg-background rounded-lg border border-border space-y-3">
-                        <div className="flex justify-between items-start">
-                          <span className="text-caption text-muted-foreground">Transaction Hash:</span>
-                          <a 
-                            href={explorerUrl || "#"} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs font-mono text-primary hover:underline break-all text-right ml-4"
+                    {alreadySigned ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 p-4 bg-secondary/10 border border-secondary/20 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-secondary">Contrato Firmado y Anclado en Blockchain</p>
+                            <p className="text-sm text-muted-foreground">Este contrato ya ha sido firmado y registrado de forma inmutable en la blockchain.</p>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-background rounded-lg border border-border space-y-3">
+                          <div className="flex justify-between items-start">
+                            <span className="text-caption text-muted-foreground">Transaction Hash:</span>
+                            <a 
+                              href={explorerUrl || "#"} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-primary hover:underline break-all text-right ml-4"
+                            >
+                              {blockchainTxHash?.substring(0, 20)}...
+                            </a>
+                          </div>
+                          {blockNumber && (
+                            <div className="flex justify-between">
+                              <span className="text-caption text-muted-foreground">Block Number:</span>
+                              <span className="text-sm font-medium">{blockNumber}</span>
+                            </div>
+                          )}
+                          {ipfsCID && (
+                            <div className="flex justify-between">
+                              <span className="text-caption text-muted-foreground">IPFS CID:</span>
+                              <span className="text-xs font-mono">{ipfsCID.substring(0, 20)}...</span>
+                            </div>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full mt-2"
+                            onClick={() => window.open(explorerUrl || "#", "_blank")}
                           >
-                            {blockchainTxHash.substring(0, 20)}...
-                          </a>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver en Block Explorer
+                          </Button>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-caption text-muted-foreground">Block Number:</span>
-                          <span className="text-sm font-medium">{blockNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-caption text-muted-foreground">IPFS CID:</span>
-                          <span className="text-xs font-mono">{ipfsCID?.substring(0, 20)}...</span>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full mt-2"
-                          onClick={() => window.open(explorerUrl || "#", "_blank")}
-                        >
-                          Ver en Block Explorer
-                        </Button>
                       </div>
-                    )}
-                    
-                    {!contractSigned && (
-                      <Button 
-                        onClick={handleSignContract}
-                        disabled={isProcessing}
-                        className="w-full mt-4 btn-primary"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Procesando...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="w-4 h-4 mr-2" />
-                            Firmar y Anclar en Blockchain
-                          </>
+                    ) : (
+                      <>
+                        <ContractTimeline steps={getTimelineSteps()} />
+                        
+                        {blockchainTxHash && (
+                          <div className="mt-6 p-4 bg-background rounded-lg border border-border space-y-3">
+                            <div className="flex justify-between items-start">
+                              <span className="text-caption text-muted-foreground">Transaction Hash:</span>
+                              <a 
+                                href={explorerUrl || "#"} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs font-mono text-primary hover:underline break-all text-right ml-4"
+                              >
+                                {blockchainTxHash.substring(0, 20)}...
+                              </a>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-caption text-muted-foreground">Block Number:</span>
+                              <span className="text-sm font-medium">{blockNumber}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-caption text-muted-foreground">IPFS CID:</span>
+                              <span className="text-xs font-mono">{ipfsCID?.substring(0, 20)}...</span>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-2"
+                              onClick={() => window.open(explorerUrl || "#", "_blank")}
+                            >
+                              Ver en Block Explorer
+                            </Button>
+                          </div>
                         )}
-                      </Button>
+                        
+                        {!contractSigned && (
+                          <Button 
+                            onClick={handleSignContract}
+                            disabled={isProcessing}
+                            className="w-full mt-4 btn-primary"
+                          >
+                            {isProcessing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Procesando...
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-4 h-4 mr-2" />
+                                Firmar y Anclar en Blockchain
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
