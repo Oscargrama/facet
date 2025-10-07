@@ -8,7 +8,9 @@ import {
   Bell,
   Menu,
   FileCheck,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  History
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,9 +25,10 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
-  { name: "Applications", href: "/credit-application", icon: CreditCard },
-  { name: "Payments", href: "/payment-history", icon: FileText },
-  { name: "Contracts", href: "/contract-review", icon: FileCheck },
+  { name: "Solicitudes", href: "/credit-application", icon: CreditCard },
+  { name: "Evaluación", href: "/risk-assessment", icon: ShieldCheck },
+  { name: "Contratos", href: "/contract-review", icon: FileCheck },
+  { name: "Pagos", href: "/payment-history", icon: History },
 ];
 
 export default function Navbar() {

@@ -15,7 +15,8 @@ import {
   Eye,
   Calendar,
   DollarSign,
-  Loader2
+  Loader2,
+  History as HistoryIcon
 } from "lucide-react";
 
 interface Application {
@@ -247,7 +248,7 @@ export default function Dashboard() {
                 
                 return (
                   <div key={contract.id} className="bg-muted/30 border border-border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="font-mono text-sm font-semibold">{contract.contract_number}</span>
@@ -283,6 +284,18 @@ export default function Dashboard() {
                           </p>
                         )}
                       </div>
+                      <div className="flex md:flex-col gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate('/contract-review', {
+                            state: { contractId: contract.id }
+                          })}
+                        >
+                          <Eye className="w-4 h-4 md:mr-2" />
+                          <span className="hidden md:inline">Ver Detalles</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -292,14 +305,22 @@ export default function Dashboard() {
         )}
 
         {/* Recent Applications */}
-        <div className="card-professional p-6">
+        <div className="card-professional p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-heading">Solicitudes Recientes</h2>
-            <Link to="/credit-application">
-              <Button variant="outline" size="sm">
-                Ver Todas
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/payment-history">
+                <Button variant="outline" size="sm">
+                  <HistoryIcon className="w-4 h-4 mr-2" />
+                  Historial de Pagos
+                </Button>
+              </Link>
+              <Link to="/credit-application">
+                <Button variant="outline" size="sm">
+                  Ver Todas
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {applications.length === 0 ? (
