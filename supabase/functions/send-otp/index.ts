@@ -22,9 +22,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('[send-otp] Request received for token:', signatureToken);
 
-    // Validate phone number format (simple E.164 check)
+    // Normalize and validate phone number (E.164)
+    const normalizedPhone = phoneNumber.replace(/[\s()-]/g, '');
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/[\s()-]/g, ''))) {
+    if (!phoneRegex.test(normalizedPhone)) {
       throw new Error('Formato de teléfono inválido. Use formato internacional (ej: +1234567890)');
     }
 
@@ -36,10 +37,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify signature token exists and is valid
     const { data: signature, error: sigError } = await supabase
       .from('contract_signatures')
-      .select('*')
+      .select('id,status,expires_at')
       .eq('signature_token', signatureToken)
       .gt('expires_at', new Date().toISOString())
-      .single();
+      .maybeSingle();
 
     if (sigError || !signature) {
       console.error('[send-otp] Invalid or expired signature token:', sigError);
@@ -55,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: recentOTPs } = await supabase
       .from('otp_verifications')
       .select('id')
-      .eq('phone_or_email', phoneNumber)
+      .eq('phone_or_email', normalizedPhone)
       .gte('created_at', oneHourAgo);
 
     if (recentOTPs && recentOTPs.length >= 3) {
@@ -76,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from('otp_verifications')
       .insert({
         signature_id: signature.id,
-        phone_or_email: phoneNumber,
+        phone_or_email: normalizedPhone,
         otp_code_hash: otpHash,
         expires_at: expiresAt.toISOString(),
         verified: false,
@@ -104,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        To: phoneNumber,
+        To: normalizedPhone,
         From: twilioPhoneNumber,
         Body: messageBody,
       }),
