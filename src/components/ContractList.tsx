@@ -71,7 +71,7 @@ export default function ContractList({ onSelectContract }: ContractListProps) {
           signed_at,
           blockchain_tx_hash,
           application_id,
-          credit_applications!inner (
+          credit_applications!contracts_application_id_fkey (
             client_name,
             client_email,
             risk_score
