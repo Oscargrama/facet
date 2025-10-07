@@ -220,8 +220,19 @@ export default function ContractReview() {
     setIsSending(true);
     
     try {
-      if (!user || !realApplicationData) {
-        throw new Error("Datos de usuario o aplicación no disponibles");
+      if (!user) {
+        throw new Error("Usuario no autenticado");
+      }
+
+      // Use either real application data from DB or passed application data
+      const appData = realApplicationData || {
+        id: applicationId,
+        credit_amount: applicationData?.creditAmount,
+        term_months: applicationData?.termMonths || parseInt(contractTerms.termLength)
+      };
+
+      if (!appData) {
+        throw new Error("Datos de aplicación no disponibles");
       }
 
       toast.info("Creando contrato en base de datos...");
@@ -234,9 +245,9 @@ export default function ContractReview() {
         .from('contracts')
         .insert({
           user_id: user.id,
-          application_id: realApplicationData.id,
+          application_id: appData.id,
           contract_number: contractNumber,
-          credit_amount: parseFloat(customerData.creditAmount),
+          credit_amount: parseFloat(appData.credit_amount || customerData.creditAmount),
           term_months: parseInt(contractTerms.termLength),
           interest_rate: parseFloat(contractTerms.interestRate),
           monthly_payment: monthlyPayment,
