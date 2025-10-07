@@ -37,6 +37,7 @@ export default function ContractReview() {
   const { user } = useAuth();
   
   const applicationId = location.state?.applicationId;
+  const contractId = location.state?.contractId;
   const applicationData = location.state?.applicationData;
   const riskScore = location.state?.riskScore || 720;
   
@@ -87,8 +88,28 @@ export default function ContractReview() {
         if (profileError) throw profileError;
         setUserProfile(profile);
 
+        // If we have a contractId, load contract first to get application_id
+        if (contractId) {
+          const { data: contract, error: contractError } = await supabase
+            .from('contracts')
+            .select('*, credit_applications(*)')
+            .eq('id', contractId)
+            .single();
+
+          if (contractError) {
+            console.error('Error loading contract:', contractError);
+            toast.error("Error al cargar el contrato");
+          } else if (contract && contract.credit_applications) {
+            setRealApplicationData(contract.credit_applications);
+            setContractTerms(prev => ({
+              ...prev,
+              termLength: contract.term_months?.toString() || prev.termLength,
+              interestRate: contract.interest_rate?.toString() || prev.interestRate,
+            }));
+          }
+        }
         // Load application data if we have an applicationId
-        if (applicationId) {
+        else if (applicationId) {
           // Try to load by UUID first (from RiskAssessment navigation)
           const { data: application, error: appError } = await supabase
             .from('credit_applications')
@@ -135,7 +156,7 @@ export default function ContractReview() {
     };
 
     loadRealData();
-  }, [user, applicationId]);
+  }, [user, applicationId, contractId]);
 
   // Calculate monthly payment
   const calculateMonthlyPayment = () => {
