@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +9,13 @@ const corsHeaders = {
 interface VerifyOTPRequest {
   signatureToken: string;
   otpCode: string;
+}
+
+// Simple SHA-256 hex helper (Deno crypto)
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -70,8 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Has excedido el número máximo de intentos. Solicita un nuevo código.');
     }
 
-    // Verify OTP hash
-    const isValid = await bcrypt.compare(otpCode, otpRecord.otp_code_hash);
+    // Verify OTP hash (same scheme as send-otp)
+    const expectedHash = await sha256Hex(`${otpCode}:${signature.id}`);
+    const isValid = expectedHash === otpRecord.otp_code_hash;
 
     if (!isValid) {
       // Increment attempts

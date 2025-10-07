@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +9,13 @@ const corsHeaders = {
 interface SendOTPRequest {
   signatureToken: string;
   phoneNumber: string;
+}
+
+// Simple SHA-256 hex helper (Deno crypto)
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -67,9 +73,8 @@ const handler = async (req: Request): Promise<Response> => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('[send-otp] Generated OTP:', otpCode.substring(0, 2) + '****');
 
-    // Hash the OTP
-    const salt = await bcrypt.genSalt(10);
-    const otpHash = await bcrypt.hash(otpCode, salt);
+    // Hash the OTP deterministically with signature.id as salt (no bcrypt)
+    const otpHash = await sha256Hex(`${otpCode}:${signature.id}`);
 
     // Store OTP in database
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
