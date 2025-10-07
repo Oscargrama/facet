@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      contract_signatures: {
+        Row: {
+          block_number: number | null
+          blockchain_tx_hash: string | null
+          client_email: string
+          client_phone: string | null
+          contract_id: string
+          created_at: string | null
+          device_fingerprint: string | null
+          expires_at: string
+          geolocation: string | null
+          id: string
+          ip_address: string | null
+          ipfs_cid: string | null
+          otp_verified_at: string | null
+          signature_hash: string | null
+          signature_token: string | null
+          signed_at: string | null
+          status: string
+          updated_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          block_number?: number | null
+          blockchain_tx_hash?: string | null
+          client_email: string
+          client_phone?: string | null
+          contract_id: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          expires_at: string
+          geolocation?: string | null
+          id?: string
+          ip_address?: string | null
+          ipfs_cid?: string | null
+          otp_verified_at?: string | null
+          signature_hash?: string | null
+          signature_token?: string | null
+          signed_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          block_number?: number | null
+          blockchain_tx_hash?: string | null
+          client_email?: string
+          client_phone?: string | null
+          contract_id?: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          expires_at?: string
+          geolocation?: string | null
+          id?: string
+          ip_address?: string | null
+          ipfs_cid?: string | null
+          otp_verified_at?: string | null
+          signature_hash?: string | null
+          signature_token?: string | null
+          signed_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           activated_at: string | null
@@ -21,6 +95,8 @@ export type Database = {
           application_id: string
           block_number: number | null
           blockchain_tx_hash: string | null
+          client_signature_method: string | null
+          client_signed_at: string | null
           completed_at: string | null
           contract_hash: string | null
           contract_number: string
@@ -33,6 +109,7 @@ export type Database = {
           ipfs_cid: string | null
           late_fees_policy: string | null
           monthly_payment: number
+          signature_token: string | null
           signed_at: string | null
           status: string
           term_months: number
@@ -46,6 +123,8 @@ export type Database = {
           application_id: string
           block_number?: number | null
           blockchain_tx_hash?: string | null
+          client_signature_method?: string | null
+          client_signed_at?: string | null
           completed_at?: string | null
           contract_hash?: string | null
           contract_number: string
@@ -58,6 +137,7 @@ export type Database = {
           ipfs_cid?: string | null
           late_fees_policy?: string | null
           monthly_payment: number
+          signature_token?: string | null
           signed_at?: string | null
           status?: string
           term_months: number
@@ -71,6 +151,8 @@ export type Database = {
           application_id?: string
           block_number?: number | null
           blockchain_tx_hash?: string | null
+          client_signature_method?: string | null
+          client_signed_at?: string | null
           completed_at?: string | null
           contract_hash?: string | null
           contract_number?: string
@@ -83,6 +165,7 @@ export type Database = {
           ipfs_cid?: string | null
           late_fees_policy?: string | null
           monthly_payment?: number
+          signature_token?: string | null
           signed_at?: string | null
           status?: string
           term_months?: number
@@ -225,6 +308,47 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      otp_verifications: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          otp_code_hash: string
+          phone_or_email: string
+          signature_id: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          otp_code_hash: string
+          phone_or_email: string
+          signature_id?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_code_hash?: string
+          phone_or_email?: string
+          signature_id?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "otp_verifications_signature_id_fkey"
+            columns: ["signature_id"]
+            isOneToOne: false
+            referencedRelation: "contract_signatures"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
