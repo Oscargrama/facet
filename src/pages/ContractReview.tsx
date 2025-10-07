@@ -220,7 +220,44 @@ export default function ContractReview() {
     setIsSending(true);
     
     try {
-      // Generate PDF contract
+      if (!user || !realApplicationData) {
+        throw new Error("Datos de usuario o aplicación no disponibles");
+      }
+
+      toast.info("Creando contrato en base de datos...");
+
+      // 1. Create contract in database first
+      const firstPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const contractNumber = `CONTRACT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { data: contractRecord, error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          user_id: user.id,
+          application_id: realApplicationData.id,
+          contract_number: contractNumber,
+          credit_amount: parseFloat(customerData.creditAmount),
+          term_months: parseInt(contractTerms.termLength),
+          interest_rate: parseFloat(contractTerms.interestRate),
+          monthly_payment: monthlyPayment,
+          total_amount: monthlyPayment * parseInt(contractTerms.termLength),
+          first_payment_date: firstPaymentDate.toISOString().split('T')[0],
+          late_fees_policy: contractTerms.lateFeesPolicy,
+          early_payment_policy: contractTerms.earlyPaymentPolicy,
+          additional_terms: contractTerms.additionalTerms,
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (contractError) {
+        console.error('Error creating contract:', contractError);
+        throw new Error("Error al crear contrato en base de datos");
+      }
+
+      toast.info("Generando contrato PDF...");
+
+      // 2. Generate PDF contract
       const contractData = {
         applicationId,
         customerName: customerData.name,
@@ -234,27 +271,51 @@ export default function ContractReview() {
         earlyPaymentPolicy: contractTerms.earlyPaymentPolicy,
         additionalTerms: contractTerms.additionalTerms,
         approvalDate: new Date().toLocaleDateString(),
-        firstPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        contractNumber: `CONTRACT-${applicationId}`,
-        ipfsCID: ipfsCID || "Pending blockchain registration",
-        blockchainTxHash: blockchainTxHash || "Pending blockchain registration"
+        firstPaymentDate: firstPaymentDate.toLocaleDateString(),
+        contractNumber: contractNumber,
+        ipfsCID: "Pending upload",
+        blockchainTxHash: "Pending signature"
       };
 
-      toast.info("Generando contrato PDF...");
       const contractText = generateContractPDF(contractData);
       
-      // Convert text to base64
+      // 3. Upload to IPFS
+      toast.info("Subiendo contrato a IPFS...");
+      const contractFile = blobToFile(new Blob([contractText]), `contract-${contractNumber}.txt`);
+      
+      // Using mock upload for demo - replace with real IPFS in production
+      const ipfsResult = await IPFSUploader.mockUpload(contractFile);
+      
+      // 4. Generate contract hash
+      const pdfHash = CreditRegistryService.generatePDFHash(contractText);
+
+      // 5. Update contract with IPFS CID and hash
+      const { error: updateError } = await supabase
+        .from('contracts')
+        .update({
+          ipfs_cid: ipfsResult.cid,
+          contract_hash: pdfHash,
+          status: 'sent_for_signature'
+        })
+        .eq('id', contractRecord.id);
+
+      if (updateError) {
+        console.error('Error updating contract:', updateError);
+      }
+
+      // 6. Convert text to base64 for email
       const base64 = btoa(unescape(encodeURIComponent(contractText)));
 
       toast.info("Enviando correo al cliente...");
 
-      // Call edge function to send email with real data
+      // 7. Call edge function to send email
       const { data, error } = await supabase.functions.invoke('send-contract-email', {
         body: {
           customerName: customerData.name,
           customerEmail: customerData.email,
+          customerPhone: customerData.phone,
           contractPdfBase64: base64,
-          applicationId,
+          applicationId: contractRecord.id,
           creditAmount: parseFloat(customerData.creditAmount).toLocaleString(),
           termLength: contractTerms.termLength,
           interestRate: contractTerms.interestRate,
@@ -272,7 +333,7 @@ export default function ContractReview() {
       
       navigate("/", { 
         state: { 
-          message: `✅ Email de prueba enviado a d.oinfante@gmail.com (destinatario real: ${customerData.email}). Revisa tu bandeja de entrada.`,
+          message: `✅ Contrato creado y enviado. Email de prueba enviado a d.oinfante@gmail.com (destinatario real: ${customerData.email}).`,
           type: "success"
         }
       });

@@ -46,6 +46,7 @@ export default function Dashboard() {
     pending: 0,
     totalValue: 0,
   });
+  const [contracts, setContracts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -69,6 +70,27 @@ export default function Dashboard() {
         if (error) throw error;
 
         setApplications(apps || []);
+
+        // Load contracts pending signature
+        const { data: contractsData, error: contractsError } = await supabase
+          .from('contracts')
+          .select(`
+            *,
+            contract_signatures (
+              status,
+              created_at,
+              expires_at
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'sent_for_signature')
+          .order('created_at', { ascending: false });
+
+        if (contractsError) {
+          console.error('Error loading contracts:', contractsError);
+        } else {
+          setContracts(contractsData || []);
+        }
 
         // Calculate stats
         const total = apps?.length || 0;
@@ -204,6 +226,70 @@ export default function Dashboard() {
             <StatsCard key={index} {...stat} />
           ))}
         </div>
+
+        {/* Contracts Pending Signature */}
+        {contracts.length > 0 && (
+          <div className="card-professional p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-heading">Contratos Pendientes de Firma</h2>
+                <p className="text-caption text-muted-foreground mt-1">
+                  Contratos enviados esperando firma digital
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {contracts.map((contract) => {
+                const signature = contract.contract_signatures?.[0];
+                const expiresAt = signature?.expires_at ? new Date(signature.expires_at) : null;
+                const isExpired = expiresAt ? expiresAt < new Date() : false;
+                
+                return (
+                  <div key={contract.id} className="bg-muted/30 border border-border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="font-mono text-sm font-semibold">{contract.contract_number}</span>
+                          {isExpired ? (
+                            <span className="px-2 py-1 bg-destructive/10 text-destructive text-xs rounded-full">
+                              Expirado
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-amber-50 text-amber-700 text-xs rounded-full">
+                              Pendiente de Firma
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Monto</p>
+                            <p className="font-semibold">${contract.credit_amount?.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Plazo</p>
+                            <p className="font-semibold">{contract.term_months} meses</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Enviado</p>
+                            <p className="font-semibold">
+                              {signature?.created_at ? new Date(signature.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        {expiresAt && !isExpired && (
+                          <p className="text-caption text-muted-foreground mt-2">
+                            ⏰ Expira: {expiresAt.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Recent Applications */}
         <div className="card-professional p-6">

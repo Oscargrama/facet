@@ -13,6 +13,7 @@ const corsHeaders = {
 interface ContractEmailRequest {
   customerName: string;
   customerEmail: string;
+  customerPhone: string;
   contractPdfBase64: string;
   applicationId: string;
   creditAmount: string;
@@ -31,6 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     const {
       customerName,
       customerEmail,
+      customerPhone,
       contractPdfBase64,
       applicationId,
       creditAmount,
@@ -57,6 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
       .insert({
         contract_id: applicationId,
         client_email: customerEmail,
+        client_phone: customerPhone,
         signature_token: signatureToken,
         expires_at: expiresAt.toISOString(),
         status: 'pending'
@@ -216,22 +219,48 @@ const handler = async (req: Request): Promise<Response> => {
                 </ul>
               </div>
 
+              <div class="info-box" style="border-left-color: #10b981;">
+                <h3 style="color: #10b981;">🔐 Firma Digital Segura</h3>
+                <p style="margin: 10px 0;">
+                  Tu contrato utiliza un sistema de firma híbrida que combina:
+                </p>
+                <ul style="margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                  <li><strong>Verificación OTP por SMS:</strong> Código de seguridad enviado a tu teléfono</li>
+                  <li><strong>Registro Blockchain:</strong> Firma inmutable registrada en Polkadot</li>
+                  <li><strong>Almacenamiento IPFS:</strong> Documento descentralizado y verificable</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 14px; color: #6b7280;">
+                  Este sistema garantiza la máxima seguridad y validez legal de tu contrato.
+                </p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${signingUrl}" class="cta-button" style="font-size: 16px;">
+                  ✍️ Firmar Contrato Ahora
+                </a>
+                <p style="margin-top: 10px; font-size: 13px; color: #6b7280;">
+                  Este enlace es válido por 48 horas
+                </p>
+              </div>
+
               <div style="text-align: center;">
                 <p><strong>📄 Tu contrato está adjunto a este correo en formato PDF</strong></p>
                 <p style="font-size: 14px; color: #6b7280;">Por favor revísalo cuidadosamente antes de proceder con la firma</p>
               </div>
 
               <div class="info-box" style="border-left-color: #10b981;">
-                <h3 style="color: #10b981;">✅ Próximos Pasos</h3>
+                <h3 style="color: #10b981;">✅ Proceso de Firma</h3>
                 <ol style="margin: 10px 0; padding-left: 20px;">
-                  <li>Revisa el contrato adjunto detalladamente</li>
-                  <li>Si estás de acuerdo con los términos, responde este correo con tu confirmación</li>
-                  <li>Nuestro equipo te contactará para finalizar el proceso</li>
-                  <li>Una vez firmado, recibirás el desembolso en tu cuenta</li>
+                  <li>Haz clic en el botón "Firmar Contrato Ahora"</li>
+                  <li>Revisa los términos del contrato en pantalla</li>
+                  <li>Ingresa tu número de teléfono para recibir un código OTP</li>
+                  <li>Verifica el código de 6 dígitos</li>
+                  <li>Tu firma será registrada automáticamente en blockchain</li>
+                  <li>Recibirás una confirmación con el hash de la transacción</li>
                 </ol>
               </div>
 
-              <p>Si tienes alguna pregunta o necesitas aclaraciones sobre los términos del contrato, no dudes en contactarnos.</p>
+              <p>Si tienes alguna pregunta o necesitas aclaraciones sobre los términos del contrato, no dudes en contactarnos antes de firmar.</p>
               
               <p style="margin-top: 30px;">
                 Atentamente,<br>
