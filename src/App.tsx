@@ -11,6 +11,7 @@ import Confirmation from "./pages/Confirmation";
 import RiskAssessment from "./pages/RiskAssessment";
 import PaymentHistory from "./pages/PaymentHistory";
 import ContractReview from "./pages/ContractReview";
+import SignContract from "./pages/SignContract";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/risk-assessment" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
             <Route path="/payment-history" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             <Route path="/contract-review" element={<ProtectedRoute><ContractReview /></ProtectedRoute>} />
+            <Route path="/sign-contract/:token" element={<SignContract />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

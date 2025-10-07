@@ -47,6 +47,34 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Generate signature token
+    const signatureToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+    
+    // Create contract signature record
+    const { data: signatureData, error: sigError } = await supabase
+      .from('contract_signatures')
+      .insert({
+        contract_id: applicationId,
+        client_email: customerEmail,
+        signature_token: signatureToken,
+        expires_at: expiresAt.toISOString(),
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (sigError) {
+      console.error('Error creating signature record:', sigError);
+      throw new Error('Error al crear registro de firma');
+    }
+
+    // Generate signing URL
+    const frontendUrl = 'https://605f3990-d8ee-44d9-a1f5-db65db94c77b.lovableproject.com';
+    const signingUrl = `${frontendUrl}/sign-contract/${signatureToken}`;
+    
+    console.log('Signing URL:', signingUrl);
+
     // Convert base64 to buffer for attachment
     const pdfBuffer = Uint8Array.from(atob(contractPdfBase64), c => c.charCodeAt(0));
 

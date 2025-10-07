@@ -1,1 +1,13 @@
 project_id = "nofftttxqpnyacxepiua"
+
+[functions.send-contract-email]
+verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.register-signature-blockchain]
+verify_jwt = false
