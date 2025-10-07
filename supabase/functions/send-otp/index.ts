@@ -36,7 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify signature token exists and is valid
     const { data: signature, error: sigError } = await supabase
       .from('contract_signatures')
-      .select('*, contracts(*)')
+      .select('*')
       .eq('signature_token', signatureToken)
       .gt('expires_at', new Date().toISOString())
       .single();
