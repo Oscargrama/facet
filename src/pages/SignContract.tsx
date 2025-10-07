@@ -55,15 +55,20 @@ export default function SignContract() {
       }
 
       try {
+        console.log('[SignContract] Loading contract with token:', token);
+        
+        // Try to get signature with joined contract
         const { data, error } = await supabase
           .from('contract_signatures')
           .select(`
             *,
-            contracts (*)
+            contracts!contract_signatures_contract_id_fkey (*)
           `)
           .eq('signature_token', token)
           .gt('expires_at', new Date().toISOString())
           .single();
+
+        console.log('[SignContract] Query result:', { data, error });
 
         if (error || !data) {
           console.error('Error loading signature:', error);
@@ -72,10 +77,28 @@ export default function SignContract() {
           return;
         }
 
+        // Fallback: If contracts join didn't work, fetch manually
+        let contractData = data.contracts;
+        if (!contractData && data.contract_id) {
+          console.log('[SignContract] Contract join failed, fetching manually with contract_id:', data.contract_id);
+          const { data: manualContract, error: contractError } = await supabase
+            .from('contracts')
+            .select('*')
+            .eq('id', data.contract_id)
+            .single();
+          
+          if (contractError) {
+            console.error('[SignContract] Error fetching contract manually:', contractError);
+          } else {
+            console.log('[SignContract] Manual contract fetch successful:', manualContract);
+            contractData = manualContract;
+          }
+        }
+
         if (data.status === 'completed') {
           // Already signed, go directly to complete step
           setSignature(data);
-          setContract(data.contracts);
+          setContract(contractData);
           setBlockchainData({
             txHash: data.blockchain_tx_hash,
             blockNumber: data.block_number,
@@ -85,17 +108,17 @@ export default function SignContract() {
         } else if (data.status === 'otp_verified') {
           // OTP verified, waiting for blockchain
           setSignature(data);
-          setContract(data.contracts);
+          setContract(contractData);
           setCurrentStep("blockchain");
           startBlockchainPolling(data.id);
         } else {
           setSignature(data);
-          setContract(data.contracts);
+          setContract(contractData);
           setExpiresAt(new Date(data.expires_at));
           setPhoneNumber(data.client_phone || "");
         }
       } catch (error: any) {
-        console.error('Error:', error);
+        console.error('[SignContract] Error:', error);
         toast.error("Error al cargar el contrato");
         navigate("/");
       } finally {
