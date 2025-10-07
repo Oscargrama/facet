@@ -207,7 +207,10 @@ export type Database = {
       credit_applications: {
         Row: {
           application_number: string
+          client_address: string | null
+          client_email: string | null
           client_name: string | null
+          client_phone: string | null
           created_at: string
           credit_amount: number
           credit_history_factor_score: number | null
@@ -216,10 +219,12 @@ export type Database = {
           debt_ratio_factor_score: number | null
           decision: string | null
           employment_stability_factor_score: number | null
+          employment_status: string | null
           id: string
           monthly_debt_payment: number | null
           monthly_income: number
           monthly_income_factor_score: number | null
+          notes: string | null
           purpose: string
           reviewed_at: string | null
           risk_score: number | null
@@ -232,7 +237,10 @@ export type Database = {
         }
         Insert: {
           application_number: string
+          client_address?: string | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           created_at?: string
           credit_amount: number
           credit_history_factor_score?: number | null
@@ -241,10 +249,12 @@ export type Database = {
           debt_ratio_factor_score?: number | null
           decision?: string | null
           employment_stability_factor_score?: number | null
+          employment_status?: string | null
           id?: string
           monthly_debt_payment?: number | null
           monthly_income: number
           monthly_income_factor_score?: number | null
+          notes?: string | null
           purpose: string
           reviewed_at?: string | null
           risk_score?: number | null
@@ -257,7 +267,10 @@ export type Database = {
         }
         Update: {
           application_number?: string
+          client_address?: string | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           created_at?: string
           credit_amount?: number
           credit_history_factor_score?: number | null
@@ -266,10 +279,12 @@ export type Database = {
           debt_ratio_factor_score?: number | null
           decision?: string | null
           employment_stability_factor_score?: number | null
+          employment_status?: string | null
           id?: string
           monthly_debt_payment?: number | null
           monthly_income?: number
           monthly_income_factor_score?: number | null
+          notes?: string | null
           purpose?: string
           reviewed_at?: string | null
           risk_score?: number | null

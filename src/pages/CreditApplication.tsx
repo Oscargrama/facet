@@ -122,6 +122,9 @@ export default function CreditApplication() {
           application_number: applicationNumber,
           user_id: user.id,
           client_name: formData.customerName,
+          client_email: formData.customerEmail,
+          client_phone: formData.customerPhone,
+          client_address: formData.customerAddress,
           credit_amount: parseFloat(formData.creditAmount),
           purpose: formData.purpose,
           term_months: 24, // Default term
@@ -129,6 +132,8 @@ export default function CreditApplication() {
           monthly_debt_payment: parseFloat(formData.monthlyDebtPayment || '0'),
           credit_history_score: parseInt(formData.creditHistoryScore),
           years_in_employment: parseInt(formData.yearsInEmployment || '0'),
+          employment_status: formData.employmentStatus,
+          notes: formData.notes,
           status: 'pending',
         })
         .select()
