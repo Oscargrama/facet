@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.register-signature-blockchain]
 verify_jwt = false
+
+[functions.get-signing-data]
+verify_jwt = false

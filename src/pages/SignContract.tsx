@@ -57,65 +57,51 @@ export default function SignContract() {
       try {
         console.log('[SignContract] Loading contract with token:', token);
         
-        // Try to get signature with joined contract
-        const { data, error } = await supabase
-          .from('contract_signatures')
-          .select(`
-            *,
-            contracts!contract_signatures_contract_id_fkey (*)
-          `)
-          .eq('signature_token', token)
-          .gt('expires_at', new Date().toISOString())
-          .single();
+        // Call edge function to get signing data (bypasses RLS)
+        const { data, error } = await supabase.functions.invoke('get-signing-data', {
+          body: { token }
+        });
 
-        console.log('[SignContract] Query result:', { data, error });
+        console.log('[SignContract] Edge function result:', { data, error });
 
-        if (error || !data) {
+        if (error) {
           console.error('Error loading signature:', error);
+          toast.error(error.message || "Error al cargar los datos de firma");
+          navigate("/");
+          return;
+        }
+
+        if (!data || !data.signature || !data.contract) {
+          console.error('Invalid response from edge function');
           toast.error("Token de firma inválido o expirado");
           navigate("/");
           return;
         }
 
-        // Fallback: If contracts join didn't work, fetch manually
-        let contractData = data.contracts;
-        if (!contractData && data.contract_id) {
-          console.log('[SignContract] Contract join failed, fetching manually with contract_id:', data.contract_id);
-          const { data: manualContract, error: contractError } = await supabase
-            .from('contracts')
-            .select('*')
-            .eq('id', data.contract_id)
-            .single();
-          
-          if (contractError) {
-            console.error('[SignContract] Error fetching contract manually:', contractError);
-          } else {
-            console.log('[SignContract] Manual contract fetch successful:', manualContract);
-            contractData = manualContract;
-          }
-        }
+        const signatureData = data.signature;
+        const contractData = data.contract;
 
-        if (data.status === 'completed') {
+        if (signatureData.status === 'completed') {
           // Already signed, go directly to complete step
-          setSignature(data);
+          setSignature(signatureData);
           setContract(contractData);
           setBlockchainData({
-            txHash: data.blockchain_tx_hash,
-            blockNumber: data.block_number,
-            explorerUrl: `${POLKADOT_CONFIG.explorerUrl}/tx/${data.blockchain_tx_hash}`
+            txHash: signatureData.blockchain_tx_hash,
+            blockNumber: signatureData.block_number,
+            explorerUrl: `${POLKADOT_CONFIG.explorerUrl}/tx/${signatureData.blockchain_tx_hash}`
           });
           setCurrentStep("complete");
-        } else if (data.status === 'otp_verified') {
+        } else if (signatureData.status === 'otp_verified') {
           // OTP verified, waiting for blockchain
-          setSignature(data);
+          setSignature(signatureData);
           setContract(contractData);
           setCurrentStep("blockchain");
-          startBlockchainPolling(data.id);
+          startBlockchainPolling(signatureData.id);
         } else {
-          setSignature(data);
+          setSignature(signatureData);
           setContract(contractData);
-          setExpiresAt(new Date(data.expires_at));
-          setPhoneNumber(data.client_phone || "");
+          setExpiresAt(new Date(signatureData.expires_at));
+          setPhoneNumber(signatureData.client_phone || "");
         }
       } catch (error: any) {
         console.error('[SignContract] Error:', error);
@@ -380,10 +366,10 @@ export default function SignContract() {
                       </div>
                     </div>
 
-                    {contract.pdf_url && (
+                    {(contract.pdf_url || contract.ipfs_cid) && (
                       <div className="pt-4 border-t border-border">
                         <a 
-                          href={contract.pdf_url} 
+                          href={contract.pdf_url || `https://gateway.pinata.cloud/ipfs/${contract.ipfs_cid}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-flex items-center space-x-2 text-primary hover:underline"
