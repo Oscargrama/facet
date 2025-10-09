@@ -32,7 +32,17 @@ const handler = async (req: Request): Promise<Response> => {
     const normalizedPhone = phoneNumber.replace(/[\s()-]/g, '');
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
     if (!phoneRegex.test(normalizedPhone)) {
-      throw new Error('Formato de teléfono inválido. Use formato internacional (ej: +1234567890)');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Formato de teléfono inválido. Use formato internacional (ej: +57 3001234567)',
+          code: 'INVALID_PHONE'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     // Initialize Supabase client with service role
@@ -50,11 +60,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (sigError || !signature) {
       console.error('[send-otp] Invalid or expired signature token:', sigError);
-      throw new Error('Token de firma inválido o expirado');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Token de firma inválido o expirado',
+          code: 'INVALID_TOKEN'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     if (signature.status !== 'pending') {
-      throw new Error('Esta firma ya ha sido procesada');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Esta firma ya ha sido procesada',
+          code: 'ALREADY_PROCESSED'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     // Rate limiting: check recent OTPs for this phone (max 3 in last hour)
@@ -66,7 +96,17 @@ const handler = async (req: Request): Promise<Response> => {
       .gte('created_at', oneHourAgo);
 
     if (recentOTPs && recentOTPs.length >= 3) {
-      throw new Error('Has excedido el límite de intentos. Por favor intenta en una hora.');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Has excedido el límite de intentos. Por favor intenta en una hora.',
+          code: 'RATE_LIMIT'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     // Generate 6-digit OTP
@@ -91,16 +131,61 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (otpInsertError) {
       console.error('[send-otp] Error storing OTP:', otpInsertError);
-      throw new Error('Error al generar código de verificación');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Error al generar código de verificación',
+          code: 'DB_ERROR'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
-    // Send SMS via Twilio
+    // Check if test mode is enabled
+    const testMode = Deno.env.get('OTP_TEST_MODE') === 'true';
+
+    if (testMode) {
+      // Test mode: skip Twilio, just store OTP and return
+      console.log('[send-otp] TEST MODE: OTP =', otpCode);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Código enviado exitosamente (modo test)',
+          expiresAt: expiresAt.toISOString(),
+          testOtp: otpCode // Include OTP in response for testing
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    // Production mode: Send SMS via Twilio
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhoneNumber = '+18449961879'; // Twilio number
+    const twilioFromNumber = Deno.env.get('TWILIO_FROM_NUMBER') || '+18449961879';
+
+    if (!twilioAccountSid || !twilioAuthToken) {
+      console.error('[send-otp] Twilio credentials not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Servicio de SMS no configurado. Contacta al administrador.',
+          code: 'CONFIG_ERROR'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
 
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    
     const messageBody = `Tu código de verificación Zentro es: ${otpCode}. Válido por 5 minutos. No compartas este código.`;
 
     const twilioResponse = await fetch(twilioUrl, {
@@ -111,7 +196,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: new URLSearchParams({
         To: normalizedPhone,
-        From: twilioPhoneNumber,
+        From: twilioFromNumber,
         Body: messageBody,
       }),
     });
@@ -119,7 +204,59 @@ const handler = async (req: Request): Promise<Response> => {
     if (!twilioResponse.ok) {
       const errorText = await twilioResponse.text();
       console.error('[send-otp] Twilio error:', errorText);
-      throw new Error('Error al enviar SMS. Verifica el número de teléfono.');
+      
+      // Parse Twilio error code
+      let errorMessage = 'Error al enviar SMS. Por favor intenta nuevamente.';
+      let errorCode = 'TWILIO_ERROR';
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        const twilioErrorCode = errorJson.code;
+        
+        // Map Twilio errors to user-friendly messages
+        switch (twilioErrorCode) {
+          case 21408:
+            errorMessage = 'Tu cuenta Twilio no tiene permisos para enviar SMS a este país. Activa Geo Permissions en Twilio Console.';
+            errorCode = 'TWILIO_21408';
+            break;
+          case 21659:
+            errorMessage = 'El número Twilio configurado no es válido. Contacta al administrador.';
+            errorCode = 'TWILIO_21659';
+            break;
+          case 21211:
+            errorMessage = 'El número de teléfono no es válido. Verifica el formato.';
+            errorCode = 'TWILIO_21211';
+            break;
+          case 21614:
+            errorMessage = 'Cuenta Trial: solo puedes enviar SMS a números verificados en Twilio Console. Verifica tu número en: https://console.twilio.com/us1/develop/phone-numbers/manage/verified';
+            errorCode = 'TWILIO_21614';
+            break;
+          default:
+            errorMessage = `Error de Twilio (${twilioErrorCode}): ${errorJson.message || 'Error desconocido'}`;
+            errorCode = `TWILIO_${twilioErrorCode}`;
+        }
+      } catch (e) {
+        console.error('[send-otp] Could not parse Twilio error:', e);
+      }
+      
+      // Don't store OTP if SMS failed
+      await supabase
+        .from('otp_verifications')
+        .delete()
+        .eq('signature_id', signature.id)
+        .eq('verified', false);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          code: errorCode
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     const twilioData = await twilioResponse.json();
@@ -141,10 +278,12 @@ const handler = async (req: Request): Promise<Response> => {
     console.error('[send-otp] Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Error al enviar código de verificación' 
+        success: false,
+        error: error.message || 'Error al enviar código de verificación',
+        code: 'INTERNAL_ERROR'
       }),
       {
-        status: 400,
+        status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       }
     );
