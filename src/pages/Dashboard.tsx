@@ -65,7 +65,7 @@ export default function Dashboard() {
 
         setApplications(apps || []);
 
-        // Load contracts pending signature
+        // Load contracts pending signature (not yet signed on blockchain)
         const { data: contractsData, error: contractsError } = await supabase
           .from('contracts')
           .select(`
@@ -78,6 +78,7 @@ export default function Dashboard() {
           `)
           .eq('user_id', user.id)
           .eq('status', 'sent_for_signature')
+          .is('blockchain_tx_hash', null)
           .order('created_at', { ascending: false });
 
         if (contractsError) {

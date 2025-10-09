@@ -123,7 +123,8 @@ export default function ContractList({ onSelectContract }: ContractListProps) {
       return contract.blockchain_tx_hash && contract.signed_at;
     }
     if (filter === "pending") {
-      return !contract.blockchain_tx_hash && contract.status === "sent_for_signature";
+      // Only show contracts sent for signature that haven't been signed on blockchain yet
+      return contract.status === "sent_for_signature" && !contract.blockchain_tx_hash;
     }
     return true;
   });
