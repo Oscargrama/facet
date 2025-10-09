@@ -70,7 +70,7 @@ export default function Dashboard() {
           .from('contracts')
           .select(`
             *,
-            contract_signatures (
+            contract_signatures!contract_signatures_contract_id_fkey (
               status,
               created_at,
               expires_at
