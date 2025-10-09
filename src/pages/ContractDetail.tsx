@@ -251,9 +251,11 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
 
       toast.info("Generando contrato PDF...");
 
-      const contractNumber = `CONTRACT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const firstPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      // Generate a temporary contract number for PDF (will be replaced with actual after DB update)
+      const tempContractNumber = `CONTRACT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
       // Generate PDF contract
       const contractData = {
         applicationId,
@@ -269,12 +271,15 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
         additionalTerms: contractTerms.additionalTerms,
         approvalDate: new Date().toLocaleDateString(),
         firstPaymentDate: firstPaymentDate.toLocaleDateString(),
-        contractNumber: contractNumber,
+        contractNumber: tempContractNumber,
         ipfsCID: "Pending upload",
         blockchainTxHash: "Pending signature"
       };
 
       const contractText = generateContractPDF(contractData);
+      
+      // Generate actual contract number
+      const contractNumber = `CONTRACT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Upload to IPFS
       toast.info("Subiendo contrato a IPFS...");
@@ -284,18 +289,20 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
       // Generate contract hash
       const pdfHash = CreditRegistryService.generatePDFHash(contractText);
 
-      // Update contract with IPFS CID and hash
+      // Update contract with IPFS CID, hash, and contract number
       const { error: updateError } = await supabase
         .from('contracts')
         .update({
           ipfs_cid: ipfsResult.cid,
           contract_hash: pdfHash,
-          status: 'sent_for_signature'
+          status: 'sent_for_signature',
+          contract_number: contractNumber
         })
         .eq('id', contractId);
 
       if (updateError) {
         console.error('Error updating contract:', updateError);
+        throw new Error('Error al actualizar el contrato: ' + updateError.message);
       }
 
       // Convert text to base64 for email
