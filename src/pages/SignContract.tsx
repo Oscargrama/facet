@@ -58,28 +58,65 @@ export default function SignContract() {
         console.log('[SignContract] Loading contract with token:', token);
         
         // Call edge function to get signing data (bypasses RLS)
-        const { data, error } = await supabase.functions.invoke('get-signing-data', {
+        const response = await supabase.functions.invoke('get-signing-data', {
           body: { token }
         });
 
-        console.log('[SignContract] Edge function result:', { data, error });
+        console.log('[SignContract] Full response:', JSON.stringify(response, null, 2));
 
-        if (error) {
-          console.error('Error loading signature:', error);
-          toast.error(error.message || "Error al cargar los datos de firma");
-          navigate("/");
+        // Check for HTTP-level errors
+        if (response.error) {
+          console.error('[SignContract] HTTP Error:', response.error);
+          
+          // Try to extract error message from response
+          const errorMessage = response.error.message || 
+                              (typeof response.error === 'string' ? response.error : null) ||
+                              "Error al cargar los datos de firma";
+          
+          toast.error(errorMessage);
+          setIsLoading(false);
+          setTimeout(() => navigate("/"), 2000);
           return;
         }
 
-        if (!data || !data.signature || !data.contract) {
-          console.error('Invalid response from edge function');
-          toast.error("Token de firma inválido o expirado");
-          navigate("/");
+        const data = response.data;
+
+        // Check if data has the expected structure
+        if (!data) {
+          console.error('[SignContract] No data in response');
+          toast.error("No se recibieron datos del servidor");
+          setIsLoading(false);
+          setTimeout(() => navigate("/"), 2000);
+          return;
+        }
+
+        // Check if data contains an error (from edge function response body)
+        if (data.error) {
+          console.error('[SignContract] Error from edge function:', data.error);
+          toast.error(data.error);
+          setIsLoading(false);
+          setTimeout(() => navigate("/"), 2000);
+          return;
+        }
+
+        console.log('[SignContract] Data structure:', {
+          hasSignature: !!data.signature,
+          hasContract: !!data.contract,
+          dataKeys: Object.keys(data)
+        });
+
+        if (!data.signature || !data.contract) {
+          console.error('[SignContract] Invalid response structure:', data);
+          toast.error("Respuesta inválida del servidor");
+          setIsLoading(false);
+          setTimeout(() => navigate("/"), 2000);
           return;
         }
 
         const signatureData = data.signature;
         const contractData = data.contract;
+        
+        console.log('[SignContract] Loaded signature status:', signatureData.status);
 
         if (signatureData.status === 'completed') {
           // Already signed, go directly to complete step
