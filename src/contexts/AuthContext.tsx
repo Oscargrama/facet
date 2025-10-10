@@ -22,34 +22,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for existing session first
+    // 1) Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (event === 'SIGNED_IN') {
+        // If user just signed in from the auth page, go to last route or home
+        const currentPath = window.location.pathname;
+        if (currentPath === '/auth') {
+          const last = localStorage.getItem('last_route');
+          navigate(last && !last.startsWith('/auth') ? last : '/', { replace: true });
+        }
+      }
+      if (event === 'SIGNED_OUT') {
+        navigate('/auth');
+      }
+    });
+
+    // 2) THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Only navigate on explicit sign in, not on token refresh or initial sign in
-        if (event === 'SIGNED_IN' && !loading) {
-          // Don't navigate if we're already authenticated
-          // This prevents unwanted redirects when returning to the tab
-          const currentPath = window.location.pathname;
-          if (currentPath === '/auth') {
-            navigate('/');
-          }
-        }
-        
-        if (event === 'SIGNED_OUT') {
-          navigate('/auth');
-        }
-      }
-    );
 
     return () => subscription.unsubscribe();
   }, [navigate]);
