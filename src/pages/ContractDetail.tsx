@@ -295,7 +295,7 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
         .update({
           ipfs_cid: ipfsResult.cid,
           contract_hash: pdfHash,
-          status: 'sent_for_signature',
+          status: 'sent_to_customer',
           contract_number: contractNumber
         })
         .eq('id', contractId);

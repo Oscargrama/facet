@@ -101,7 +101,7 @@ export default function ContractList({ onSelectContract }: ContractListProps) {
       );
     }
     
-    if (contract.status === "sent_for_signature") {
+    if (contract.status === "sent_to_customer") {
       return (
         <Badge variant="outline" className="border-primary/30 text-primary">
           <Clock className="w-3 h-3 mr-1" />
@@ -124,7 +124,7 @@ export default function ContractList({ onSelectContract }: ContractListProps) {
     }
     if (filter === "pending") {
       // Only show contracts sent for signature that haven't been signed on blockchain yet
-      return contract.status === "sent_for_signature" && !contract.blockchain_tx_hash;
+      return contract.status === "sent_to_customer" && !contract.blockchain_tx_hash;
     }
     return true;
   });
@@ -164,7 +164,7 @@ export default function ContractList({ onSelectContract }: ContractListProps) {
             onClick={() => setFilter("pending")}
             size="sm"
           >
-            Pendientes ({contracts.filter(c => !c.blockchain_tx_hash && c.status === "sent_for_signature").length})
+            Pendientes ({contracts.filter(c => !c.blockchain_tx_hash && c.status === "sent_to_customer").length})
           </Button>
           <Button
             variant={filter === "signed" ? "default" : "outline"}

@@ -77,7 +77,7 @@ export default function Dashboard() {
             )
           `)
           .eq('user_id', user.id)
-          .eq('status', 'sent_for_signature')
+          .eq('status', 'sent_to_customer')
           .is('blockchain_tx_hash', null)
           .order('created_at', { ascending: false });
 
