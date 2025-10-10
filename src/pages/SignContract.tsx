@@ -246,56 +246,95 @@ export default function SignContract() {
 
   const initiateBlockchainRegistration = async (signatureId: string) => {
     try {
+      console.log('[SignContract] Initiating blockchain registration for:', signatureId);
+      
       // Call the blockchain registration function
       const { data, error } = await supabase.functions.invoke('register-signature-blockchain', {
         body: { signatureId }
       });
 
       if (error) {
-        console.error('Blockchain error:', error);
+        console.error('[SignContract] Blockchain error:', error);
         toast.error("Error al iniciar registro blockchain");
         return;
       }
 
-      // Start polling for completion
-      startBlockchainPolling(signatureId);
+      console.log('[SignContract] Blockchain registration response:', data);
+
+      // If successful, immediately show completion with returned data
+      if (data?.success && data.txHash) {
+        setBlockchainData({
+          txHash: data.txHash,
+          blockNumber: data.blockNumber,
+          explorerUrl: `${POLKADOT_CONFIG.explorerUrl}/tx/${data.txHash}`
+        });
+        setCurrentStep("complete");
+        toast.success("¡Firma registrada en blockchain!");
+        
+        // Start light polling to confirm database update
+        startBlockchainPolling(signatureId, true);
+      } else {
+        // Fallback: start polling if no immediate data
+        console.log('[SignContract] No immediate blockchain data, starting polling');
+        startBlockchainPolling(signatureId, false);
+      }
     } catch (error: any) {
-      console.error('Error initiating blockchain:', error);
+      console.error('[SignContract] Error initiating blockchain:', error);
       toast.error("Error al registrar en blockchain");
     }
   };
 
-  const startBlockchainPolling = (signatureId: string) => {
+  const startBlockchainPolling = (signatureId: string, lightMode: boolean = false) => {
+    const maxAttempts = lightMode ? 20 : 40; // 60s for light mode, 120s for full mode
+    let attempts = 0;
+
     const pollInterval = setInterval(async () => {
+      attempts++;
+      
+      if (attempts > maxAttempts) {
+        clearInterval(pollInterval);
+        if (!lightMode) {
+          toast.error("Tiempo de espera agotado. Por favor contacta soporte.", {
+            duration: 5000,
+          });
+        }
+        return;
+      }
+
       try {
-        const { data, error } = await supabase
-          .from('contract_signatures')
-          .select('*')
-          .eq('id', signatureId)
-          .single();
+        // Use the new edge function to fetch status (bypasses RLS)
+        const { data, error } = await supabase.functions.invoke('get-signature-status', {
+          body: { signatureId }
+        });
 
         if (error) {
-          console.error('Polling error:', error);
+          console.error('[SignContract] Polling error:', error);
           return;
         }
 
-        if (data.status === 'completed') {
+        console.log('[SignContract] Poll result:', data);
+
+        if (data?.status === 'completed') {
           clearInterval(pollInterval);
-          setBlockchainData({
-            txHash: data.blockchain_tx_hash,
-            blockNumber: data.block_number,
-            explorerUrl: `${POLKADOT_CONFIG.explorerUrl}/tx/${data.blockchain_tx_hash}`
-          });
-          setCurrentStep("complete");
-          toast.success("¡Firma completada exitosamente!");
+          
+          // Update blockchain data if not in light mode or if data changed
+          if (!lightMode || !blockchainData) {
+            setBlockchainData({
+              txHash: data.blockchain_tx_hash,
+              blockNumber: data.block_number,
+              explorerUrl: `${POLKADOT_CONFIG.explorerUrl}/tx/${data.blockchain_tx_hash}`
+            });
+            setCurrentStep("complete");
+            toast.success("¡Firma completada exitosamente!");
+          }
         }
       } catch (error) {
-        console.error('Polling error:', error);
+        console.error('[SignContract] Polling error:', error);
       }
     }, 3000);
 
-    // Stop polling after 5 minutes
-    setTimeout(() => clearInterval(pollInterval), 5 * 60 * 1000);
+    // Cleanup on unmount
+    return () => clearInterval(pollInterval);
   };
 
   if (isLoading) {
