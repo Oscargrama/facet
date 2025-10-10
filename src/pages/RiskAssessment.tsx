@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
@@ -30,12 +30,14 @@ interface RiskFactor {
 
 export default function RiskAssessment() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [overallScore, setOverallScore] = useState(0);
   const [recommendation, setRecommendation] = useState<"approve" | "review" | "deny">("review");
   const [application, setApplication] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
   
   const applicationId = location.state?.applicationId;
   const applicationData = location.state?.applicationData;
@@ -205,6 +207,74 @@ export default function RiskAssessment() {
         return "En revisión manual";
       case "deny":
         return "Solicitud rechazada";
+    }
+  };
+
+  const handleGenerateContract = async (adjustedInterestRate?: number) => {
+    if (!applicationId || !user || !applicationData) {
+      toast.error("Datos de solicitud incompletos");
+      return;
+    }
+
+    setIsGeneratingContract(true);
+
+    try {
+      // Calculate contract details
+      const creditAmount = parseFloat(applicationData.creditAmount);
+      const termMonths = 24; // Default term
+      const baseInterestRate = adjustedInterestRate || 16.0; // Base rate or adjusted rate
+      const monthlyRate = baseInterestRate / 100 / 12;
+      
+      // Calculate monthly payment using amortization formula
+      const monthlyPayment = creditAmount * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
+                             (Math.pow(1 + monthlyRate, termMonths) - 1);
+      
+      const totalAmount = monthlyPayment * termMonths;
+      
+      // Calculate first payment date (30 days from now)
+      const firstPaymentDate = new Date();
+      firstPaymentDate.setDate(firstPaymentDate.getDate() + 30);
+
+      // Generate contract number
+      const contractNumber = `CT-${Date.now()}`;
+
+      // Create contract
+      const { data: contract, error: contractError } = await supabase
+        .from('contracts')
+        .insert({
+          contract_number: contractNumber,
+          application_id: applicationId,
+          user_id: user.id,
+          credit_amount: creditAmount,
+          term_months: termMonths,
+          interest_rate: baseInterestRate,
+          monthly_payment: monthlyPayment,
+          total_amount: totalAmount,
+          first_payment_date: firstPaymentDate.toISOString().split('T')[0],
+          status: 'draft',
+          late_fees_policy: 'Se aplicará un cargo del 2% sobre el monto vencido por cada día de retraso.',
+          early_payment_policy: 'Se permite el pago anticipado sin penalización. El monto se aplicará primero a intereses y luego al capital.',
+          additional_terms: 'El contrato está sujeto a las condiciones generales de crédito de Zentro Credit.'
+        })
+        .select()
+        .single();
+
+      if (contractError) throw contractError;
+
+      toast.success("Contrato generado exitosamente");
+      
+      // Navigate to contract review
+      navigate('/contract-review', {
+        state: { 
+          contractId: contract.id,
+          applicationId: applicationId
+        }
+      });
+    } catch (error: any) {
+      console.error('Error generating contract:', error);
+      toast.error(error.message || 'Error al generar el contrato');
+    } finally {
+      setIsGeneratingContract(false);
     }
   };
 
@@ -428,27 +498,23 @@ export default function RiskAssessment() {
 
                 <div className="space-y-2">
                   {recommendation === "approve" && (
-                    <Link to="/contract-review" state={{ applicationId, applicationData, riskScore: overallScore }}>
-                      <Button className="btn-primary w-full">
-                        Generar Contrato
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="btn-primary w-full"
+                      onClick={() => handleGenerateContract()}
+                      disabled={isGeneratingContract}
+                    >
+                      {isGeneratingContract ? "Generando..." : "Generar Contrato"}
+                    </Button>
                   )}
                   
                   {recommendation === "review" && (
-                    <Link to="/contract-review" state={{ 
-                      applicationId, 
-                      applicationData: {
-                        ...applicationData,
-                        interestRate: applicationData?.interestRate ? (parseFloat(applicationData.interestRate) + 2).toString() : '18.0',
-                        adjustedForRisk: true
-                      }, 
-                      riskScore: overallScore 
-                    }}>
-                      <Button className="btn-primary w-full bg-amber-600 hover:bg-amber-700">
-                        Aprobar con Condiciones Especiales
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="btn-primary w-full bg-amber-600 hover:bg-amber-700"
+                      onClick={() => handleGenerateContract(18.0)}
+                      disabled={isGeneratingContract}
+                    >
+                      {isGeneratingContract ? "Generando..." : "Aprobar con Condiciones Especiales"}
+                    </Button>
                   )}
                   
                   <Link to="/">
