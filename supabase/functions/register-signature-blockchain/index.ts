@@ -160,6 +160,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .from('contracts')
       .update({
         status: 'signed',
+        signed_at: new Date().toISOString(),
         client_signed_at: new Date().toISOString(),
         blockchain_tx_hash: tx.hash,
         block_number: receipt.blockNumber,
