@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { ethers } from "https://esm.sh/ethers@6.13.0";
 
@@ -22,7 +21,8 @@ const CONTRACT_ADDRESS = "0xc46230b7c0f61A960DaDC7c19833A442dc43320D";
 const RPC_URL = "https://testnet-passet-hub-eth-rpc.polkadot.io";
 const EXPLORER_URL = "https://blockscout-passet-hub.parity-testnet.parity.io";
 
-const handler = async (req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
+  console.log('[register-blockchain] Function invoked - Method:', req.method);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -204,6 +204,4 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   }
-};
-
-serve(handler);
+});

@@ -44,6 +44,7 @@ export default function SignContract() {
   
   // Blockchain result
   const [blockchainData, setBlockchainData] = useState<any>(null);
+  const [blockchainError, setBlockchainError] = useState<string | null>(null);
 
   // Load contract data
   useEffect(() => {
@@ -245,6 +246,7 @@ export default function SignContract() {
   };
 
   const initiateBlockchainRegistration = async (signatureId: string) => {
+    setBlockchainError(null);
     try {
       console.log('[SignContract] Initiating blockchain registration for:', signatureId);
       
@@ -253,9 +255,22 @@ export default function SignContract() {
         body: { signatureId }
       });
 
+      console.log('[SignContract] Full blockchain response:', { data, error });
+
       if (error) {
-        console.error('[SignContract] Blockchain error:', error);
-        toast.error("Error al iniciar registro blockchain");
+        console.error('[SignContract] Blockchain HTTP error:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        setBlockchainError(`Error de conexión: ${errorMsg}`);
+        toast.error(`Error al iniciar registro blockchain: ${errorMsg}`);
+        return;
+      }
+
+      // Check if the response contains an error
+      if (data && !data.success) {
+        console.error('[SignContract] Blockchain function error:', data);
+        const errorMsg = data.error || data.details || "Error desconocido";
+        setBlockchainError(`Error del servidor: ${errorMsg}`);
+        toast.error(`Error blockchain: ${errorMsg}`);
         return;
       }
 
@@ -280,7 +295,9 @@ export default function SignContract() {
       }
     } catch (error: any) {
       console.error('[SignContract] Error initiating blockchain:', error);
-      toast.error("Error al registrar en blockchain");
+      const errorMsg = error.message || error.toString();
+      setBlockchainError(`Error inesperado: ${errorMsg}`);
+      toast.error(`Error al registrar en blockchain: ${errorMsg}`);
     }
   };
 
@@ -601,30 +618,66 @@ export default function SignContract() {
           {/* Step 4: Blockchain Registration */}
           {currentStep === "blockchain" && (
             <div className="space-y-6 text-center">
-              <div className="flex justify-center">
-                <Loader2 className="w-16 h-16 animate-spin text-primary" />
-              </div>
-              <div>
-                <h2 className="text-heading mb-2">Registrando en Blockchain</h2>
-                <p className="text-body text-muted-foreground">
-                  Estamos registrando tu firma de forma inmutable en la blockchain de Polkadot.
-                  Este proceso puede tomar algunos segundos...
-                </p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-4 text-left">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="w-4 h-4 text-secondary" />
-                  <span className="text-sm">Código OTP verificado</span>
-                </div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-sm">Firmando con wallet corporativa...</span>
-                </div>
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">Esperando confirmación de blockchain...</span>
-                </div>
-              </div>
+              {blockchainError ? (
+                <>
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <AlertCircle className="w-12 h-12 text-destructive" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-heading mb-2 text-destructive">Error en Registro Blockchain</h2>
+                    <p className="text-body text-muted-foreground mb-4">
+                      No se pudo completar el registro en blockchain. Por favor intenta nuevamente.
+                    </p>
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-left">
+                      <p className="text-caption text-muted-foreground mb-1">Detalles del error:</p>
+                      <p className="text-sm text-destructive font-mono break-words">{blockchainError}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => initiateBlockchainRegistration(signature.id)}
+                    disabled={isProcessing}
+                    className="w-full btn-primary"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Reintentando...
+                      </>
+                    ) : (
+                      "Reintentar Registro Blockchain"
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-center">
+                    <Loader2 className="w-16 h-16 animate-spin text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-heading mb-2">Registrando en Blockchain</h2>
+                    <p className="text-body text-muted-foreground">
+                      Estamos registrando tu firma de forma inmutable en la blockchain de Polkadot.
+                      Este proceso puede tomar algunos segundos...
+                    </p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4 text-left">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-secondary" />
+                      <span className="text-sm">Código OTP verificado</span>
+                    </div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-sm">Firmando con wallet corporativa...</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm">Esperando confirmación de blockchain...</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
