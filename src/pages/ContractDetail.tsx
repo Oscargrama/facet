@@ -259,12 +259,14 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
         return;
       }
 
-      // Validate phone format (basic check for 10 digits)
-      const phoneRegex = /^\d{10}$/;
-      if (customerData.phone && !phoneRegex.test(customerData.phone.replace(/\D/g, ''))) {
-        toast.error("Por favor ingresa un teléfono válido (10 dígitos)");
-        setIsSending(false);
-        return;
+      // Validate phone format only if phone is provided
+      if (customerData.phone && customerData.phone.trim() !== '') {
+        const cleanPhone = customerData.phone.replace(/\D/g, '');
+        if (cleanPhone.length < 10) {
+          toast.error("Por favor ingresa un teléfono válido (mínimo 10 dígitos)");
+          setIsSending(false);
+          return;
+        }
       }
 
       toast.info("Generando contrato PDF...");
