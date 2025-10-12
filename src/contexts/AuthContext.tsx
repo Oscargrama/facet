@@ -4,13 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+const DEMO_EMAIL = 'demo@zentrocredit.com';
+const DEMO_PASSWORD = 'Demo2024!Zentro';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInAsDemo: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
+  isDemo: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,6 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    setIsDemo(user?.email === DEMO_EMAIL);
+  }, [user]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -86,6 +96,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const signInAsDemo = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+    });
+    
+    if (error) {
+      toast.error('Error al acceder al modo demo');
+    } else {
+      toast.success('🎭 Accediste en modo demo');
+    }
+    
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -95,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signUp, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, session, signUp, signIn, signInAsDemo, signOut, loading, isDemo }}>
       {children}
     </AuthContext.Provider>
   );

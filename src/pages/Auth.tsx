@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Mail, Lock, User } from 'lucide-react';
+import { Shield, Mail, Lock, User, Zap } from 'lucide-react';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
@@ -20,7 +20,7 @@ const signInSchema = z.object({
 });
 
 export default function Auth() {
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, signInAsDemo } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -76,6 +76,15 @@ export default function Auth() {
         });
         setErrors(newErrors);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInAsDemo();
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +211,28 @@ export default function Auth() {
             </form>
           </TabsContent>
         </Tabs>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">o accede rápidamente</span>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleDemoLogin}
+          disabled={isLoading}
+          variant="outline"
+          className="w-full border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+        >
+          <Zap className="mr-2 h-4 w-4 text-primary" />
+          Entrar como Demo
+        </Button>
+        <p className="text-xs text-center text-muted-foreground mt-2">
+          Acceso rápido sin registro
+        </p>
       </Card>
     </div>
   );
