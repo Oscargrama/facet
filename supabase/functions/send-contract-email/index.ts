@@ -283,15 +283,21 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
 `;
 
-    // Always send email to the real customer email (works in demo mode too)
-    console.log(isDemo ? '🎭 Demo mode: Sending email to' : 'Sending email to', customerEmail);
+    // TEMPORAL: Resend con onboarding@resend.dev solo permite enviar a d.oinfante@gmail.com
+    // Una vez valides tu dominio en resend.com/domains, podrás enviar a cualquier email
+    const TEMP_TEST_EMAIL = "d.oinfante@gmail.com";
+    const actualRecipient = TEMP_TEST_EMAIL;
+    
+    console.log(isDemo ? '🎭 Demo mode: Sending email via Resend' : 'Sending email via Resend');
+    console.log("Target customer email:", customerEmail);
+    console.log("Actual recipient (Resend restriction):", actualRecipient);
     console.log("Application ID:", applicationId);
 
-    // Send email using Resend - always to real customer email
+    // Send email using Resend - to test email with clear subject
     const emailResponse = await resend.emails.send({
       from: "Zentro Credit <onboarding@resend.dev>",
-      to: [customerEmail],
-      subject: `Contrato de Crédito - ${applicationId}`,
+      to: [actualRecipient],
+      subject: `[Para: ${customerEmail}] Contrato de Crédito - ${applicationId}`,
       html: emailHtml,
       attachments: [
         {
@@ -332,11 +338,13 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         emailId: emailId,
-        message: `Email enviado exitosamente a ${customerEmail}`,
+        message: `Email enviado a ${actualRecipient} (destinatario real: ${customerEmail})`,
         recipient: customerEmail,
+        actualRecipient: actualRecipient,
         applicationId: applicationId,
         signatureToken: signatureToken,
-        isDemo: isDemo
+        isDemo: isDemo,
+        note: "Usando email temporal hasta validar dominio en Resend"
       }),
       {
         status: 200,

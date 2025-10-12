@@ -352,8 +352,8 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
       const isDemo = user.email === 'demo@zentrocredit.com';
       toast.success(
         isDemo 
-          ? `🎭 Demo: Contrato enviado a ${customerData.email}` 
-          : `¡Contrato enviado a ${customerData.email}!`
+          ? `🎭 Demo: Contrato enviado a d.oinfante@gmail.com (simulando envío a ${customerData.email})` 
+          : `¡Contrato enviado a d.oinfante@gmail.com!`
       );
       
       console.log("Contract email sent:", data);
