@@ -283,40 +283,30 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
 `;
 
-    let emailId = 'demo-mode-no-email-sent';
+    // Always send email to the real customer email (works in demo mode too)
+    console.log(isDemo ? '🎭 Demo mode: Sending email to' : 'Sending email to', customerEmail);
+    console.log("Application ID:", applicationId);
 
-    // Only send email if not demo mode
-    if (!isDemo) {
-      // TEST MODE: Send to d.oinfante@gmail.com while domain is being validated
-      const testEmail = "d.oinfante@gmail.com";
-      
-      console.log("Sending email via Resend to:", testEmail);
-      console.log("Original recipient:", customerEmail);
-      console.log("Application ID:", applicationId);
+    // Send email using Resend - always to real customer email
+    const emailResponse = await resend.emails.send({
+      from: "Zentro Credit <onboarding@resend.dev>",
+      to: [customerEmail],
+      subject: `Contrato de Crédito - ${applicationId}`,
+      html: emailHtml,
+      attachments: [
+        {
+          filename: `Contrato_${applicationId}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    });
 
-      // Send email using Resend
-      const emailResponse = await resend.emails.send({
-        from: "Zentro Credit <onboarding@resend.dev>",
-        to: [testEmail], // TEST MODE: Always send to test email
-        subject: `[PRUEBA para ${customerEmail}] Contrato de Crédito - ${applicationId}`,
-        html: emailHtml,
-        attachments: [
-          {
-            filename: `Contrato_${applicationId}.pdf`,
-            content: pdfBuffer,
-          },
-        ],
-      });
-
-      if (emailResponse.error) {
-        throw emailResponse.error;
-      }
-
-      console.log("Email sent successfully via Resend:", emailResponse.data?.id);
-      emailId = emailResponse.data?.id || 'unknown';
-    } else {
-      console.log('🎭 Demo mode: Email sending skipped for', customerEmail);
+    if (emailResponse.error) {
+      throw emailResponse.error;
     }
+
+    console.log("✅ Email sent successfully via Resend:", emailResponse.data?.id);
+    const emailId = emailResponse.data?.id || 'unknown';
 
     // Store notification in database for tracking
     const { data: notification, error: dbError } = await supabase
@@ -326,7 +316,7 @@ const handler = async (req: Request): Promise<Response> => {
         subject: `Contrato de Crédito - ${applicationId}`,
         content: emailHtml,
         application_id: applicationId,
-        status: isDemo ? 'demo_skipped' : 'sent',
+        status: 'sent',
         sent_at: new Date().toISOString()
       })
       .select()
@@ -342,11 +332,11 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         emailId: emailId,
-        message: isDemo ? "Demo mode: email not sent" : "Contract email sent successfully (TEST MODE to d.oinfante@gmail.com)",
-        originalRecipient: customerEmail,
-        testRecipient: isDemo ? null : "d.oinfante@gmail.com",
+        message: `Email enviado exitosamente a ${customerEmail}`,
+        recipient: customerEmail,
         applicationId: applicationId,
-        demoMode: isDemo
+        signatureToken: signatureToken,
+        isDemo: isDemo
       }),
       {
         status: 200,

@@ -25,8 +25,10 @@ import {
   Wallet,
   Link2,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ContractDetailProps {
   contractId: string;
@@ -249,6 +251,22 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
         throw new Error("Usuario no autenticado");
       }
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerData.email)) {
+        toast.error("Por favor ingresa un email válido");
+        setIsSending(false);
+        return;
+      }
+
+      // Validate phone format (basic check for 10 digits)
+      const phoneRegex = /^\d{10}$/;
+      if (customerData.phone && !phoneRegex.test(customerData.phone.replace(/\D/g, ''))) {
+        toast.error("Por favor ingresa un teléfono válido (10 dígitos)");
+        setIsSending(false);
+        return;
+      }
+
       toast.info("Generando contrato PDF...");
 
       const firstPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -329,7 +347,12 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
         throw new Error(error.message || "Error al enviar el correo");
       }
 
-      toast.success("¡Contrato enviado exitosamente al cliente!");
+      const isDemo = user.email === 'demo@zentrocredit.com';
+      toast.success(
+        isDemo 
+          ? `🎭 Demo: Contrato enviado a ${customerData.email}` 
+          : `¡Contrato enviado a ${customerData.email}!`
+      );
       
       console.log("Contract email sent:", data);
       
@@ -658,7 +681,22 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
 
           {/* Actions */}
           <div className="card-professional p-6">
-            <h3 className="text-heading mb-4">Acciones</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-heading">Acciones</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm">
+                      El contrato se enviará al email <strong>{customerData.email}</strong> con un enlace seguro de firma. 
+                      El OTP para verificar la firma se enviará a <strong>{customerData.phone}</strong>.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <p className="text-body text-muted-foreground mb-4">
               Opciones para gestionar y compartir el contrato.
             </p>
