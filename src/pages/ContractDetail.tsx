@@ -165,9 +165,9 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
   // Get real customer data
   const getCustomerData = () => {
     return {
-      name: userProfile?.full_name || realApplicationData?.client_name || user?.email || "",
-      email: userProfile?.email || realApplicationData?.client_email || user?.email || "",
-      phone: userProfile?.phone || realApplicationData?.client_phone || "",
+      name: realApplicationData?.client_name || userProfile?.full_name || user?.email || "",
+      email: realApplicationData?.client_email || userProfile?.email || user?.email || "",
+      phone: realApplicationData?.client_phone || userProfile?.phone || "",
       creditAmount: realApplicationData?.credit_amount || 0,
     };
   };
