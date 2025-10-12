@@ -184,13 +184,61 @@ For issues or questions:
 3. Test with small amounts first
 4. Review transaction on block explorer
 
+## 🎭 Demo Mode
+
+### Credentials
+- **Email**: `demo@zentrocredit.com`
+- **Password**: `Demo2024!Zentro`
+- **OTP Code**: `123456` (always)
+
+### Demo Mode Behavior
+The system detects demo users (`demo@zentrocredit.com`) and applies special behavior:
+
+✅ **No Real Emails Sent**
+- Contract emails are not sent to real inboxes
+- Database records are created normally for tracking
+- Signing URLs are generated but emails are skipped
+
+✅ **No Real SMS Sent**
+- OTP is always hardcoded to `123456`
+- No Twilio charges are incurred
+- OTP is displayed directly in the UI
+
+✅ **Pre-loaded Demo Data**
+- 2 credit applications (1 approved, 1 pending)
+- 1 signed contract with payment history
+- 3 payments (2 paid, 1 pending)
+- Complete user profile
+
+✅ **Full Functionality**
+- All features work normally
+- Blockchain transactions can be real or simulated
+- Users can test the complete flow without side effects
+
+### Setting Up Demo User
+1. Go to Lovable Cloud → Auth Settings
+2. Create user manually:
+   - Email: `demo@zentrocredit.com`
+   - Password: `Demo2024!Zentro`
+   - Full Name: "Usuario Demo"
+3. Copy the generated `user_id`
+4. Run SQL scripts (see project documentation) to insert demo data
+5. Enable auto-confirm signups in Auth Settings
+
+### Testing Demo Mode
+1. Click "Entrar como Demo" on login page
+2. Navigate through dashboard to see pre-loaded data
+3. Test contract signing flow with automatic OTP (`123456`)
+4. Verify no emails/SMS are sent to real recipients
+
 ## Next Steps
 
 1. ✅ Deploy CreditRegistry contract
 2. ✅ Update contract address in config
 3. ✅ Get testnet tokens
 4. ✅ Test full contract flow
-5. 🔄 Configure production IPFS
-6. 🔄 Add comprehensive error handling
-7. 🔄 Implement unit tests
-8. 🔄 Security audit before mainnet
+5. ✅ Configure demo mode
+6. 🔄 Configure production IPFS
+7. 🔄 Add comprehensive error handling
+8. 🔄 Implement unit tests
+9. 🔄 Security audit before mainnet

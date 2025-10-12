@@ -16,8 +16,10 @@ import {
   Clock, 
   ExternalLink,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { POLKADOT_CONFIG } from "@/config/blockchain";
 
 type SigningStep = "review" | "phone" | "otp" | "blockchain" | "complete";
@@ -41,6 +43,7 @@ export default function SignContract() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpAttempts, setOtpAttempts] = useState(0);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
   
   // Blockchain result
   const [blockchainData, setBlockchainData] = useState<any>(null);
@@ -200,7 +203,14 @@ export default function SignContract() {
         throw new Error(data.error || "Error al enviar código");
       }
 
-      toast.success("Código enviado a tu teléfono");
+      // Check if demo mode OTP was returned
+      if (data.testOtp && data.demoMode) {
+        setDemoOtp(data.testOtp);
+        toast.success("Código demo generado");
+      } else {
+        toast.success("Código enviado a tu teléfono");
+      }
+      
       setCurrentStep("otp");
     } catch (error: any) {
       console.error('Error sending OTP:', error);
@@ -564,6 +574,16 @@ export default function SignContract() {
                   Ingresa el código de 6 dígitos que recibiste por SMS
                 </p>
               </div>
+
+              {/* Demo Mode OTP Display */}
+              {demoOtp && (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    🎭 <strong>Modo Demo:</strong> Tu código OTP es <strong className="text-lg">{demoOtp}</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="space-y-4">
                 <div className="flex justify-center">

@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify signature token exists and is valid
     const { data: signature, error: sigError } = await supabase
       .from('contract_signatures')
-      .select('id,status,expires_at')
+      .select('id,status,expires_at,client_email')
       .eq('signature_token', signatureToken)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
@@ -72,6 +72,9 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    // Check if this is demo mode
+    const isDemo = signature.client_email === 'demo@zentrocredit.com';
 
     if (signature.status !== 'pending') {
       return new Response(
@@ -109,8 +112,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 6-digit OTP (hardcoded for demo mode)
+    const otpCode = isDemo ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
     console.log('[send-otp] Generated OTP:', otpCode.substring(0, 2) + '****');
 
     // Hash the OTP deterministically with signature.id as salt (no bcrypt)
@@ -144,7 +147,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if test mode is enabled
+    // Check if demo mode or test mode is enabled
+    if (isDemo) {
+      console.log('[send-otp] 🎭 DEMO MODE: OTP not sent via SMS. OTP:', otpCode);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Código generado (modo demo)',
+          expiresAt: expiresAt.toISOString(),
+          testOtp: otpCode,
+          demoMode: true
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
     const testMode = Deno.env.get('OTP_TEST_MODE') === 'true';
 
     if (testMode) {
