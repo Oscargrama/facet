@@ -206,7 +206,13 @@ export default function SignContract() {
       // Check if demo mode OTP was returned
       if (data.testOtp && data.demoMode) {
         setDemoOtp(data.testOtp);
-        toast.success("Código demo generado");
+        toast.success(
+          `🎭 MODO DEMO\n\nCódigo OTP: ${data.testOtp}\n\n` +
+          (data.reason === 'twilio_trial_restriction' 
+            ? 'SMS no disponible en cuenta Trial de Twilio' 
+            : 'Modo demostración activo'),
+          { duration: 10000 }
+        );
       } else {
         toast.success("Código enviado a tu teléfono");
       }
@@ -577,10 +583,18 @@ export default function SignContract() {
 
               {/* Demo Mode OTP Display */}
               {demoOtp && (
-                <Alert className="bg-blue-50 border-blue-200">
-                  <Info className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-800">
-                    🎭 <strong>Modo Demo:</strong> Tu código OTP es <strong className="text-lg">{demoOtp}</strong>
+                <Alert className="border-amber-500 bg-amber-50">
+                  <Info className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <div className="font-semibold mb-2">🎭 Modo Demostración Activo</div>
+                    <div className="text-sm mb-3">
+                      SMS no disponible. Tu código OTP es:
+                    </div>
+                    <div className="p-3 bg-white border-2 border-amber-400 rounded-lg text-center">
+                      <code className="text-2xl font-bold text-primary tracking-widest">
+                        {demoOtp}
+                      </code>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -625,7 +639,11 @@ export default function SignContract() {
                 </Button>
 
                 <button
-                  onClick={() => setCurrentStep("phone")}
+                  onClick={() => {
+                    setCurrentStep("phone");
+                    setOtpCode("");
+                    setDemoOtp(null);
+                  }}
                   className="w-full text-caption text-primary hover:underline"
                   disabled={isProcessing}
                 >

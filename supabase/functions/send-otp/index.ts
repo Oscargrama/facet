@@ -229,6 +229,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Parse Twilio error code
       let errorMessage = 'Error al enviar SMS. Por favor intenta nuevamente.';
       let errorCode = 'TWILIO_ERROR';
+      let shouldFallbackToDemo = false;
       
       try {
         const errorJson = JSON.parse(errorText);
@@ -236,6 +237,14 @@ const handler = async (req: Request): Promise<Response> => {
         
         // Map Twilio errors to user-friendly messages
         switch (twilioErrorCode) {
+          case 21608:  // Unverified number on Trial account
+            console.log('[send-otp] 🎭 Twilio Trial error 21608 detected, falling back to DEMO MODE');
+            shouldFallbackToDemo = true;
+            break;
+          case 21614:  // Trial account restriction
+            console.log('[send-otp] 🎭 Twilio Trial error 21614 detected, falling back to DEMO MODE');
+            shouldFallbackToDemo = true;
+            break;
           case 21408:
             errorMessage = 'Tu cuenta Twilio no tiene permisos para enviar SMS a este país. Activa Geo Permissions en Twilio Console.';
             errorCode = 'TWILIO_21408';
@@ -248,10 +257,6 @@ const handler = async (req: Request): Promise<Response> => {
             errorMessage = 'El número de teléfono no es válido. Verifica el formato.';
             errorCode = 'TWILIO_21211';
             break;
-          case 21614:
-            errorMessage = 'Cuenta Trial: solo puedes enviar SMS a números verificados en Twilio Console. Verifica tu número en: https://console.twilio.com/us1/develop/phone-numbers/manage/verified';
-            errorCode = 'TWILIO_21614';
-            break;
           default:
             errorMessage = `Error de Twilio (${twilioErrorCode}): ${errorJson.message || 'Error desconocido'}`;
             errorCode = `TWILIO_${twilioErrorCode}`;
@@ -260,7 +265,24 @@ const handler = async (req: Request): Promise<Response> => {
         console.error('[send-otp] Could not parse Twilio error:', e);
       }
       
-      // Don't store OTP if SMS failed
+      // If Trial account error, activate demo mode (DON'T delete OTP)
+      if (shouldFallbackToDemo) {
+        console.log('[send-otp] 🎭 DEMO MODE ACTIVATED: OTP =', otpCode);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: '🎭 Modo Demo: SMS no disponible. Código mostrado en pantalla.',
+            expiresAt: expiresAt.toISOString(),
+            testOtp: otpCode,
+            demoMode: true,
+            reason: 'twilio_trial_restriction'
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+      
+      // Only delete OTP if it's a real error (not Trial)
       await supabase
         .from('otp_verifications')
         .delete()
