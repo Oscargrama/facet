@@ -283,21 +283,16 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
 `;
 
-    // TEMPORAL: Resend con onboarding@resend.dev solo permite enviar a d.oinfante@gmail.com
-    // Una vez valides tu dominio en resend.com/domains, podrás enviar a cualquier email
-    const TEMP_TEST_EMAIL = "d.oinfante@gmail.com";
-    const actualRecipient = TEMP_TEST_EMAIL;
-    
-    console.log(isDemo ? '🎭 Demo mode: Sending email via Resend' : 'Sending email via Resend');
-    console.log("Target customer email:", customerEmail);
-    console.log("Actual recipient (Resend restriction):", actualRecipient);
+    // Send email to real customer using verified domain
+    console.log(isDemo ? '🎭 Demo mode: Sending contract email' : 'Sending contract email');
+    console.log("Customer email:", customerEmail);
     console.log("Application ID:", applicationId);
 
-    // Send email using Resend - to test email with clear subject
+    // Send email using Resend with verified domain
     const emailResponse = await resend.emails.send({
-      from: "Zentro Credit <onboarding@resend.dev>",
-      to: [actualRecipient],
-      subject: `[Para: ${customerEmail}] Contrato de Crédito - ${applicationId}`,
+      from: "Zentro Credit <noreply-demozentrocredit@designlabmarketing.com>",
+      to: [customerEmail],
+      subject: `Contrato de Crédito - ${applicationId}`,
       html: emailHtml,
       attachments: [
         {
@@ -338,13 +333,11 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         emailId: emailId,
-        message: `Email enviado a ${actualRecipient} (destinatario real: ${customerEmail})`,
+        message: `Email enviado exitosamente a ${customerEmail}`,
         recipient: customerEmail,
-        actualRecipient: actualRecipient,
         applicationId: applicationId,
         signatureToken: signatureToken,
-        isDemo: isDemo,
-        note: "Usando email temporal hasta validar dominio en Resend"
+        isDemo: isDemo
       }),
       {
         status: 200,
