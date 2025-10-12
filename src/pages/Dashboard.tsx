@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import StatsCard from "@/components/StatsCard";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +17,8 @@ import {
   Calendar,
   DollarSign,
   Loader2,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Info
 } from "lucide-react";
 
 interface Application {
@@ -36,7 +38,7 @@ interface Application {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState({
@@ -199,6 +201,25 @@ export default function Dashboard() {
       <Navbar />
       
       <main className="container-professional py-8">
+        {/* Demo Mode Banner */}
+        {isDemo && (
+          <Alert className="bg-blue-50 border-blue-200 mb-6">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800 flex items-center justify-between">
+              <span>
+                🎭 <strong>Modo Demo:</strong> Estás explorando la plataforma con datos de ejemplo. Los cambios no son permanentes.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/auth?tab=signup')}
+                className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                Crear cuenta real
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
