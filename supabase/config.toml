@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.get-signature-status]
 verify_jwt = false
+
+[functions.ensure-demo-user]
+verify_jwt = false

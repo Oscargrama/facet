@@ -97,17 +97,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInAsDemo = async () => {
+    // Asegura que el usuario demo exista y la contraseña sea la correcta
+    try {
+      await supabase.functions.invoke('ensure-demo-user', { body: {} });
+    } catch (e) {
+      console.warn('ensure-demo-user failed, continuing to sign in', e);
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email: DEMO_EMAIL,
       password: DEMO_PASSWORD,
     });
-    
+
     if (error) {
       toast.error('Error al acceder al modo demo');
     } else {
       toast.success('🎭 Accediste en modo demo');
     }
-    
+
     return { error };
   };
 
