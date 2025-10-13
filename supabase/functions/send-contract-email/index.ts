@@ -15,6 +15,7 @@ interface ContractEmailRequest {
   customerEmail: string;
   customerPhone: string;
   contractPdfBase64: string;
+  contractId: string;
   applicationId: string;
   creditAmount: string;
   termLength: string;
@@ -34,6 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       customerEmail,
       customerPhone,
       contractPdfBase64,
+      contractId,
       applicationId,
       creditAmount,
       termLength,
@@ -61,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: signatureData, error: sigError } = await supabase
       .from('contract_signatures')
       .insert({
-        contract_id: applicationId,
+        contract_id: contractId,
         client_email: customerEmail,
         client_phone: customerPhone,
         signature_token: signatureToken,
