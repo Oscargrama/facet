@@ -152,6 +152,8 @@ export function usePolkadotWallet() {
       provider: null,
       signer: null
     });
+    setError(null);
+    setIsConnecting(false);
   };
 
   const signMessage = async (message: string): Promise<string> => {
