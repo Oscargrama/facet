@@ -434,11 +434,21 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
               {wallet.isConnecting ? "Conectando..." : "Conectar Wallet"}
             </Button>
           ) : (
-            <div className="flex items-center space-x-2 px-3 py-2 bg-secondary/10 rounded-lg">
-              <Wallet className="w-4 h-4 text-secondary" />
-              <span className="text-sm font-mono">
-                {wallet.address?.substring(0, 6)}...{wallet.address?.substring(38)}
-              </span>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 px-3 py-2 bg-secondary/10 rounded-lg">
+                <Wallet className="w-4 h-4 text-secondary" />
+                <span className="text-sm font-mono">
+                  {wallet.address?.substring(0, 6)}...{wallet.address?.substring(38)}
+                </span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={wallet.disconnect}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Desconectar
+              </Button>
             </div>
           )}
           
