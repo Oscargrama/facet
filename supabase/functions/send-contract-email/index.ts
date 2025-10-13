@@ -43,6 +43,14 @@ const handler = async (req: Request): Promise<Response> => {
       monthlyPayment,
     }: ContractEmailRequest = await req.json();
 
+    console.log("🔍 DEBUG - Received request with:", {
+      contractId,
+      applicationId,
+      contractIdType: typeof contractId,
+      applicationIdType: typeof applicationId,
+      customerEmail
+    });
+
     console.log("Sending contract email to:", customerEmail);
     
     // Check if this is demo mode

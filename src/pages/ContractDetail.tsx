@@ -330,6 +330,14 @@ export default function ContractDetail({ contractId, applicationId, onBack }: Co
 
       toast.info("Enviando correo al cliente...");
 
+      // Debug: Log contractId and applicationId
+      console.log("🔍 DEBUG - About to send email with:", {
+        contractId,
+        applicationId,
+        contractIdType: typeof contractId,
+        applicationIdType: typeof applicationId
+      });
+
       // Call edge function to send email
       const { data, error } = await supabase.functions.invoke('send-contract-email', {
         body: {
