@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Mail, Lock, User, Zap } from 'lucide-react';
+import { Shield, Mail, Lock, User, Zap, BookOpen } from 'lucide-react';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
@@ -233,6 +233,23 @@ export default function Auth() {
         <p className="text-xs text-center text-muted-foreground mt-2">
           Acceso rápido sin registro
         </p>
+
+        <div className="mt-4">
+          <a
+            href="https://www.notion.so/2897cb4a6fac80c29ffeda8c7d5f76d8?pvs=25"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <Button
+              variant="default"
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+            >
+              <BookOpen className="mr-2 h-5 w-5" />
+              Hub Documentación
+            </Button>
+          </a>
+        </div>
       </Card>
     </div>
   );
