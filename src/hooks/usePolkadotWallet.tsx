@@ -84,25 +84,38 @@ export function usePolkadotWallet() {
     setError(null);
 
     try {
+      // Fuerza el prompt de permisos de MetaMask para permitir reconexión explícita
+      try {
+        await window.ethereum.request({
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }]
+        });
+      } catch (permErr) {
+        // Fallback para wallets que no soportan requestPermissions
+        const tmpProvider = new ethers.BrowserProvider(window.ethereum);
+        await tmpProvider.send("eth_requestAccounts", []);
+      }
+
       const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const network = await provider.getNetwork();
 
-      setWalletState({
-        address,
-        isConnected: true,
-        chainId: Number(network.chainId),
-        provider,
-        signer
-      });
-
-      // Switch to Polkadot testnet if not on it
+      // Cambia a la red Polkadot si es necesario
       if (Number(network.chainId) !== POLKADOT_CONFIG.chainId) {
         await switchToPolkadotNetwork();
       }
+
+      // Relee la red por si se cambió
+      const finalNetwork = await provider.getNetwork();
+
+      setWalletState({
+        address,
+        isConnected: true,
+        chainId: Number(finalNetwork.chainId),
+        provider,
+        signer
+      });
     } catch (err: any) {
       setError(err.message || "Error al conectar wallet");
       console.error("Error connecting wallet:", err);
@@ -144,16 +157,27 @@ export function usePolkadotWallet() {
     }
   };
 
-  const disconnect = () => {
-    setWalletState({
-      address: null,
-      isConnected: false,
-      chainId: null,
-      provider: null,
-      signer: null
-    });
-    setError(null);
-    setIsConnecting(false);
+  const disconnect = async () => {
+    try {
+      if (window.ethereum?.request) {
+        await window.ethereum.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }]
+        });
+      }
+    } catch (e) {
+      console.warn("No se pudo revocar permisos de MetaMask:", e);
+    } finally {
+      setWalletState({
+        address: null,
+        isConnected: false,
+        chainId: null,
+        provider: null,
+        signer: null
+      });
+      setError(null);
+      setIsConnecting(false);
+    }
   };
 
   const signMessage = async (message: string): Promise<string> => {
