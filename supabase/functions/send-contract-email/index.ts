@@ -67,11 +67,35 @@ const handler = async (req: Request): Promise<Response> => {
     const signatureToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
     
+    // Resolve contract ID (fallback by applicationId if missing)
+    let resolvedContractId = contractId as string | undefined;
+    if (!resolvedContractId && applicationId) {
+      console.log('⚠️ contractId missing. Attempting to resolve by applicationId:', applicationId);
+      const { data: foundContract, error: findErr } = await supabase
+        .from('contracts')
+        .select('id')
+        .eq('application_id', applicationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (findErr) {
+        console.error('Error resolving contract by applicationId:', findErr);
+      }
+      if (foundContract?.id) {
+        resolvedContractId = foundContract.id as string;
+        console.log('✅ Resolved contractId:', resolvedContractId);
+      }
+    }
+
+    if (!resolvedContractId) {
+      throw new Error('Falta contractId para crear registro de firma');
+    }
+
     // Create contract signature record
     const { data: signatureData, error: sigError } = await supabase
       .from('contract_signatures')
       .insert({
-        contract_id: contractId,
+        contract_id: resolvedContractId,
         client_email: customerEmail,
         client_phone: customerPhone,
         signature_token: signatureToken,
