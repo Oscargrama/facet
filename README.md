@@ -1,73 +1,116 @@
-# Welcome to your Lovable project
+# 💳 Zentro Credit — Plataforma de Créditos On-chain
 
-## Project info
+> Solución fintech que permite evaluar, otorgar y registrar créditos en blockchain.  
+> Incluye un **Modo Demo** totalmente funcional para explorar sin necesidad de datos reales.
 
-**URL**: https://lovable.dev/projects/605f3990-d8ee-44d9-a1f5-db65db94c77b
+---
 
-## How can I edit this code?
+## 🎥 Demo Rápida
 
-There are several ways of editing your application.
+- **Video Pitch:** [Ver en Loom](http://loom.com/share/1f30036c6e92467b822877b0e14c0144)  
+- **App Online (Demo):** [https://zentro-creditflow.lovable.app/](https://zentro-creditflow.lovable.app/)  
+- **Repositorio GitHub:** [https://github.com/Oscargrama/zentro-creditflow.git](https://github.com/Oscargrama/zentro-creditflow.git)
 
-**Use Lovable**
+### Credenciales de Modo Demo
+📧 Email: demo@zentrocredit.com
+🔐 Password: Demo2024!Zentro
+🔢 OTP: 123456
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/605f3990-d8ee-44d9-a1f5-db65db94c77b) and start prompting.
+> ⚠️ En modo demo, los correos y SMS se simulan, pero las transacciones blockchain se ejecutan en **testnet**.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 📊 Funcionalidades Clave
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 🏠 **Dashboard** con estadísticas y aplicaciones simuladas  
+- 🧾 **Solicitud de crédito** con validación completa  
+- 🤖 **Evaluación de riesgo** y scoring automatizado  
+- ✍️ **Firma digital con OTP** y registro blockchain  
+- 🔗 **Conexión de wallet** (Polkadot / Ethereum)  
+- 🧠 **Modo Demo:** datos precargados y OTP fijo `123456`
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🧱 Arquitectura General
+Frontend (Next.js)
+↓
+Supabase (Auth, DB, Edge Functions)
+↓
+Blockchain Testnet (Polkadot)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Stack Principal
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Next.js + TypeScript  
+- Supabase (Auth, Functions, Database)  
+- Polkadot.js / Ethers.js  
+- TailwindCSS  
+- Resend (emails reales) / Twilio (SMS reales, solo en modo producción)
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## ⚙️ Instalación y Ejecución Local
+```bash
+# Clonar el repositorio
+git clone https://github.com/Oscargrama/zentro-creditflow.git
+cd zentro-creditflow
+
+# Instalar dependencias
+npm install
+
+# Copiar variables de entorno
+cp .env.example .env.local
+
+# Ejecutar en modo desarrollo
 npm run dev
-```
+Variables requeridas (.env.local):
+iniSUPABASE_URL=
+SUPABASE_ANON_KEY=
+DEMO_EMAIL=demo@zentrocredit.com
+DEMO_PASSWORD=Demo2024!Zentro
+TEST_MODE=true
 
-**Edit a file directly in GitHub**
+🔄 Flujo de Usuario
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Login o clic en "Demo Login"
+Acceso directo al Dashboard
+Ver y crear solicitudes de crédito
+Evaluación de riesgo → Revisión de contrato
+Firma digital con OTP 123456
+Registro automático de la firma en testnet
 
-**Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+🧾 Modo Demo — Descripción Rápida
+El Modo Demo permite probar la plataforma sin registro ni datos reales.
+ComportamientoDemoRealEmail/SMS❌ Simulado✅ Enviado (Resend/Twilio)OTP123456 fijoAleatorioDatos precargados✅ Incluidos❌ VacíoBlockchain✅ Testnet✅ Testnet/MainnetFirma digitalSimuladaReal
+Edge Functions involucradas
 
-## What technologies are used for this project?
+ensure-demo-user → crea/actualiza usuario demo
+send-otp → OTP fijo 123456
+verify-otp → acepta OTP fijo
+register-signature-blockchain → registra firma real en testnet
 
-This project is built with:
+📘 Guía completa: docs/MODO_DEMO.md
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+📚 Recursos del Proyecto
+TipoLink🧾 Hub (Notion)Zentro Notion Hub🎥 Video PitchVer en Loom💻 Repositorio GitHubZentro Creditflow🔗 Página /test (demo interactiva)https://zentro-creditflow.lovable.app/📅 Registro en LatinHack Apphttps://app.latinhack.io/🖥️ Pitch Deck (PPT)(agregar enlace a tu presentación)
 
-## How can I deploy this project?
+🛡️ Seguridad y Restricciones
 
-Simply open [Lovable](https://lovable.dev/projects/605f3990-d8ee-44d9-a1f5-db65db94c77b) and click on Share -> Publish.
+Los datos demo no son modificables.
+No se envían correos ni SMS reales.
+Las transacciones blockchain se realizan solo en testnet.
+Sesiones demo expiran automáticamente tras inactividad.
 
-## Can I connect a custom domain to my Lovable project?
 
-Yes, you can!
+🧩 Roadmap / Próximos Pasos
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+✅ Modo Demo (v1.0)
+🔜 Integración con oráculos de scoring real
+🔜 Portal para lenders institucionales
+🔜 Multired de stablecoins (Polkadot + Ethereum)
+🔜 Versión móvil optimizada
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+🏆 Hackathon
+Este proyecto está siendo desarrollado como parte de LatinHack, la hackathon de blockchain más grande de Latinoamérica.
+Zentro Credit representa nuestra visión de democratizar el acceso al crédito mediante tecnología blockchain, combinando evaluación de riesgo automatizada con transparencia on-chain.
