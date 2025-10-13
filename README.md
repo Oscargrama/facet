@@ -10,6 +10,7 @@
 - **Video Pitch:** [Ver en Loom](http://loom.com/share/1f30036c6e92467b822877b0e14c0144)  
 - **App Online (Demo):** [https://zentro-creditflow.lovable.app/](https://zentro-creditflow.lovable.app/)  
 - **Repositorio GitHub:** [https://github.com/Oscargrama/zentro-creditflow.git](https://github.com/Oscargrama/zentro-creditflow.git)
+- **Hub (este documento): [https://www.notion.so/2897cb4a6fac80c29ffeda8c7d5f76d8?pvs=25](https://www.notion.so/2897cb4a6fac80c29ffeda8c7d5f76d8?pvs=25)
 
 ### Credenciales de Modo Demo
 📧 Email: demo@zentrocredit.com
