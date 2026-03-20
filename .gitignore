@@ -11,6 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.local
+.env.*.local
+artifacts/
+cache/
+coverage/
+coverage.json
+supabase/.temp/
+hardhat/
+facet-rwa@0.0.0
 
 # Editor directories and files
 .vscode/*

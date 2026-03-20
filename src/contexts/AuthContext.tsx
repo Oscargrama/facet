@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const DEMO_EMAIL = 'demo@zentrocredit.com';
-const DEMO_PASSWORD = 'Demo2024!Zentro';
+const DEMO_EMAIL = 'demo@facetrwa.com';
+const DEMO_PASSWORD = 'Facet2026!';
 
 interface AuthContextType {
   user: User | null;

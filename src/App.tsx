@@ -7,12 +7,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RoutePersistence from "@/components/RoutePersistence";
 import Dashboard from "./pages/Dashboard";
-import CreditApplication from "./pages/CreditApplication";
-import Confirmation from "./pages/Confirmation";
-import RiskAssessment from "./pages/RiskAssessment";
-import PaymentHistory from "./pages/PaymentHistory";
-import ContractReview from "./pages/ContractReview";
-import SignContract from "./pages/SignContract";
+import Lots from "./pages/Lots";
+import Market from "./pages/SecondaryMarket";
+import Activity from "./pages/Activity";
+import Investor from "./pages/Investor";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -29,12 +27,10 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/credit-application" element={<ProtectedRoute><CreditApplication /></ProtectedRoute>} />
-            <Route path="/confirmation" element={<ProtectedRoute><Confirmation /></ProtectedRoute>} />
-            <Route path="/risk-assessment" element={<ProtectedRoute><RiskAssessment /></ProtectedRoute>} />
-            <Route path="/payment-history" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
-            <Route path="/contract-review" element={<ProtectedRoute><ContractReview /></ProtectedRoute>} />
-            <Route path="/sign-contract/:token" element={<SignContract />} />
+            <Route path="/lots" element={<ProtectedRoute><Lots /></ProtectedRoute>} />
+            <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+            <Route path="/investor" element={<ProtectedRoute><Investor /></ProtectedRoute>} />
+            <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

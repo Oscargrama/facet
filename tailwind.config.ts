@@ -15,8 +15,16 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', 'Inter', 'ui-sans-serif', 'system-ui'],
+        display: ['var(--font-display)', 'Space Grotesk', 'ui-sans-serif', 'system-ui'],
       },
       colors: {
+        facet: {
+          "deep-blue": "hsl(var(--facet-deep-blue))",
+          teal: "hsl(var(--facet-teal))",
+          emerald: "hsl(var(--facet-emerald))",
+          "deep-green": "hsl(var(--facet-deep-green))",
+          "bright-green": "hsl(var(--facet-bright-green))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -1,4 +1,4 @@
-project_id = "nofftttxqpnyacxepiua"
+project_id = "bbcjvemhlyufhkrioaia"
 
 [functions.send-contract-email]
 verify_jwt = false
@@ -19,4 +19,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ensure-demo-user]
+verify_jwt = false
+
+[functions.index-lot-events]
 verify_jwt = false

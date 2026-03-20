@@ -1,0 +1,55 @@
+{
+  "metadata_version": "1.0",
+  "stone_id": "FACET-STONE-001",
+  "report": {
+    "report_number": "000-12742",
+    "report_date": "2025-09-24",
+    "city": "Medellin, Colombia"
+  },
+  "identification": {
+    "species": "Berilo",
+    "variety": "Esmeralda colombiana",
+    "origin": "Natural",
+    "pieces": 1
+  },
+  "characteristics": {
+    "carats": 0.37,
+    "dimensions_mm": "3.9 x 3.3 x 2.5",
+    "cut": "Octagono rectangular escalonado",
+    "color": "Verde azulado intenso",
+    "clarity": "Translucida con inclusiones visibles"
+  },
+  "treatment": {
+    "method": "Indicios de tratamiento menor con aceite",
+    "comments": "Sin comentarios"
+  },
+  "custody": {
+    "location": "Caja Fuerte Facet Medellin, Antioquia",
+    "provider": "Facet Infraestructura Joyera"
+  },
+  "evidence": {
+    "photo": {
+      "file_name": "IMG_4587.HEIC",
+      "sha256": "78cb6b7cd521dafa8d09a59786caf986f54225e072f1408ff15ea3b995c13f27",
+      "taken_at": "2026-03-12T17:46:16-05:00",
+      "ipfs_cid": "bafybeif6nvcr2grtw46j37tslvtxfqzfty3aifvlba57qbhcfmsyizdpk4",
+      "alt_ipfs_cids": [
+        "bafybeigegm3hcjgapy4z4komyx4rrirlpf2dtj3f2anyi56yxgmxew7agq"
+      ]
+    },
+    "certificate": {
+      "front_file": "IMG_4593.HEIC",
+      "front_sha256": "98a1ef68c60997ec00022985ef084faf4b3f16a4409ae4e6fb97c0821a7ba015",
+      "front_taken_at": "2026-03-12T17:49:24-05:00",
+      "back_file": "IMG_4594.HEIC",
+      "back_sha256": "a6066d3b7e47d3f5d2b5ef9206c2ea4cfa950575f1ecfb0ab370ba19eefd1947",
+      "back_taken_at": "2026-03-12T17:49:29-05:00",
+      "front_ipfs_cid": "bafybeifozdborszxvux4smt7u23seyx7fqiqyycs6mz7e7zenngg2obf5a",
+      "back_ipfs_cid": "bafybeia24y3lxs44lia6ajf3sgjx3cv7empono6slv3yxn4x2afw2bckxy"
+    },
+    "video_ipfs_cid": "bafybeiew5v65wpmsaupmd5pflijkf4eaqy7tzap4a6cjadg6b3pdhjydx4"
+  },
+  "cert_hash": "0x60175159600acc42cb44928e2346f11f139a9990a88f7877538a04d79ca8595e",
+  "cert_hash_note": "keccak256(sha256(cert_front) + ':' + sha256(cert_back))",
+  "timestamp": "2026-03-12T00:00:00Z"
+}

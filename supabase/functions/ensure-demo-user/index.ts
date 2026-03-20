@@ -7,9 +7,9 @@ const corsHeaders = {
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const DEMO_EMAIL = "demo@zentrocredit.com";
-const DEMO_PASSWORD = "Demo2024!Zentro";
+const SERVICE_ROLE_KEY = (Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) as string;
+const DEMO_EMAIL = "demo@facetrwa.com";
+const DEMO_PASSWORD = "Facet2026!";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

@@ -1,14 +1,14 @@
-# Zentro - Polkadot Integration Setup Guide
+# Facet RWA - Polkadot Integration Setup Guide
 
 ## Overview
-Zentro integrates with Polkadot Asset Hub Testnet (Paseo) to provide blockchain-based credit contract management with immutable record-keeping and IPFS storage.
+Facet RWA integrates with Polkadot Asset Hub Testnet (Paseo) to provide RWA custody, fractional tokenization, and on-chain lifecycle management.
 
 ## Network Configuration
 
 - **Network**: Polkadot Asset Hub Testnet (Paseo)
 - **Chain ID**: 420420422
-- **RPC URL**: https://testnet-passet-hub-eth-rpc.polkadot.io
-- **Block Explorer**: https://blockscout-passet-hub.parity-testnet.parity.io
+- **RPC URL**: https://services.polkadothub-rpc.com/testnet
+- **Block Explorer**: https://polkadot-hub-testnet.subscan.io
 - **Currency**: PAS (testnet token)
 
 ## Prerequisites
@@ -26,27 +26,30 @@ Zentro integrates with Polkadot Asset Hub Testnet (Paseo) to provide blockchain-
    - Add API keys to `src/services/IPFSUploader.ts`
    - Currently using mock IPFS for development
 
-## Smart Contract Deployment
+## Smart Contract Deployment (RWA)
 
-### Step 1: Install kitdot (if not already installed)
+### Step 1: Install deps
 ```bash
-npm install -g kitdot
+npm install
 ```
 
-### Step 2: Initialize kitdot project
+### Step 2: Set env vars
 ```bash
-kitdot init
+export RPC_URL=https://services.polkadothub-rpc.com/testnet
+export PRIVATE_KEY=0x...
 ```
 
-### Step 3: Deploy CreditRegistry Contract
+### Step 3: Deploy
 ```bash
-npx kitdot deploy src/contracts/CreditRegistry.sol --network passetHub
+npm run deploy:rwa
 ```
 
-### Step 4: Update Contract Address
-After deployment, update the contract address in `src/config/blockchain.ts`:
+### Step 4: Update addresses
+After deployment, update in `src/config/blockchain.ts`:
 ```typescript
-export const CONTRACT_ADDRESS = "0xYourDeployedContractAddress";
+export const RWA_REGISTRY_ADDRESS = "0x...";
+export const FACET_TOKEN_ADDRESS = "0x...";
+export const FACET_EXTRACT_NFT_ADDRESS = "0x...";
 ```
 
 ## Application Features
@@ -56,11 +59,12 @@ export const CONTRACT_ADDRESS = "0xYourDeployedContractAddress";
 - Approve connection in your wallet
 - Network will automatically switch to Polkadot testnet if needed
 
-### 2. Contract Signing Flow
-1. **Sign Contract**: Wallet opens to sign the contract hash
-2. **Upload to IPFS**: Contract is uploaded to IPFS for decentralized storage
-3. **Blockchain Anchoring**: Contract hash and IPFS CID are registered on-chain
-4. **Verification**: Transaction details are displayed with block explorer link
+### 2. RWA Custody Flow
+1. **Create Lot**: register custody data, cert hash, IPFS evidence
+2. **Mint**: fractional ERC‑20 tokens (FACET‑LOT)
+3. **Transfer**: secondary market via ERC‑20 transfers
+4. **Burn**: redemption with updated carats
+5. **Mint NFT**: extraction receipt (FACET‑EXTRACT)
 
 ### 3. Verification
 - View transaction on block explorer
@@ -81,8 +85,8 @@ export const CONTRACT_ADDRESS = "0xYourDeployedContractAddress";
          ├─────────► IPFSUploader
          │           (Decentralized storage)
          │
-         └─────────► CreditRegistryService
-                     (Smart contract interaction)
+         └─────────► FacetRwaService
+                     (RWA registry + tokens)
                      
                             │
                             ▼
@@ -113,27 +117,32 @@ Create `.env` file (not tracked in git):
 VITE_CONTRACT_ADDRESS=0xYourContractAddress
 VITE_PINATA_API_KEY=your_pinata_api_key
 VITE_PINATA_SECRET=your_pinata_secret
-VITE_NETWORK_RPC=https://testnet-passet-hub-eth-rpc.polkadot.io
+VITE_NETWORK_RPC=https://services.polkadothub-rpc.com/testnet
 ```
 
 ## Testing
 
+### Contract Tests
+```bash
+npm run test:contracts
+npm run coverage:contracts
+```
+
 ### Manual Testing
 1. Navigate to `/contract-review`
 2. Connect wallet
-3. Click "Firmar y Anclar en Blockchain"
-4. Verify each step completes:
-   - ✅ Contract signed
-   - ✅ IPFS upload complete
-   - ✅ Blockchain registration complete
-5. Check transaction on block explorer
+3. Registrar lote en "Custodia Física Real"
+4. Emitir tokens fraccionados
+5. Transferir y redimir (burn)
+6. Emitir NFT extract
+7. Verificar transacciones en el explorer
 
 ### Contract Verification
 ```javascript
-// Get credit record by ID
-const registry = new CreditRegistryService(signer);
-const credit = await registry.getCredit(1);
-console.log(credit);
+// Get lot by ID
+const registry = new FacetRwaService(signer);
+const lot = await registry.getLot(1);
+console.log(lot);
 ```
 
 ## Troubleshooting
@@ -150,7 +159,7 @@ console.log(credit);
 
 ### Transaction failures
 - Check gas balance (PAS tokens)
-- Verify contract address is correct
+- Verify contract addresses are correct
 - Check console for detailed error messages
 
 ### IPFS upload fails
@@ -174,7 +183,7 @@ console.log(credit);
 - [Kitdot Guide](https://github.com/polkadot-api/kitdot)
 - [Ethers.js Documentation](https://docs.ethers.org/)
 - [IPFS Documentation](https://docs.ipfs.tech/)
-- [Block Explorer](https://blockscout-passet-hub.parity-testnet.parity.io)
+- [Block Explorer](https://polkadot-hub-testnet.subscan.io)
 
 ## Support
 
@@ -187,12 +196,12 @@ For issues or questions:
 ## 🎭 Demo Mode
 
 ### Credentials
-- **Email**: `demo@zentrocredit.com`
-- **Password**: `Demo2024!Zentro`
+- **Originador**: `originador@facet.demo`
+- **Password**: `Facet2026!`
 - **OTP Code**: `123456` (always)
 
 ### Demo Mode Behavior
-The system detects demo users (`demo@zentrocredit.com`) and applies special behavior:
+The system detects demo users (`originador@facet.demo`) and applies special behavior:
 
 ✅ **No Real Emails Sent**
 - Contract emails are not sent to real inboxes
@@ -205,7 +214,7 @@ The system detects demo users (`demo@zentrocredit.com`) and applies special beha
 - OTP is displayed directly in the UI
 
 ✅ **Pre-loaded Demo Data**
-- 2 credit applications (1 approved, 1 pending)
+- Example RWA lots and events
 - 1 signed contract with payment history
 - 3 payments (2 paid, 1 pending)
 - Complete user profile
@@ -218,8 +227,8 @@ The system detects demo users (`demo@zentrocredit.com`) and applies special beha
 ### Setting Up Demo User
 1. Go to Lovable Cloud → Auth Settings
 2. Create user manually:
-   - Email: `demo@zentrocredit.com`
-   - Password: `Demo2024!Zentro`
+   - Email: `originador@facet.demo`
+   - Password: `Facet2026!`
    - Full Name: "Usuario Demo"
 3. Copy the generated `user_id`
 4. Run SQL scripts (see project documentation) to insert demo data
@@ -233,10 +242,10 @@ The system detects demo users (`demo@zentrocredit.com`) and applies special beha
 
 ## Next Steps
 
-1. ✅ Deploy CreditRegistry contract
-2. ✅ Update contract address in config
+1. ✅ Deploy RWA contracts
+2. ✅ Update contract addresses in config
 3. ✅ Get testnet tokens
-4. ✅ Test full contract flow
+4. ✅ Test RWA custody flow
 5. ✅ Configure demo mode
 6. 🔄 Configure production IPFS
 7. 🔄 Add comprehensive error handling

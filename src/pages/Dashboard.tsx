@@ -1,442 +1,406 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import StatsCard from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import StatsCard from "@/components/StatsCard";
-import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePolkadotWallet } from "@/hooks/usePolkadotWallet";
+import { FacetRwaService } from "@/services/FacetRwaService";
+import { POLKADOT_CONFIG } from "@/config/blockchain";
 import { supabase } from "@/integrations/supabase/client";
+import { useLiveEvents } from "@/hooks/useLiveEvents";
 import {
-  CreditCard,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Eye,
-  Calendar,
-  DollarSign,
-  Loader2,
-  History as HistoryIcon,
-  Info
+  Gem,
+  Coins,
+  Wallet,
+  Vault,
+  ArrowUpRight,
+  Info,
+  Activity,
+  ChevronRight,
+  ExternalLink,
+  ShieldCheck
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip
+} from "recharts";
 
-interface Application {
-  id: string;
-  application_number: string;
-  client_name: string;
-  credit_amount: number;
-  status: string;
-  risk_score: number | null;
-  submitted_at: string;
-  term_months: number;
-  monthly_income: number;
-  monthly_debt_payment: number;
-  credit_history_score: number;
-  years_in_employment: number;
-  purpose: string;
+interface LotRow {
+  lot_id: number;
+  carats: number;
+  physical_location: string;
+  custody_provider: string;
+  cert_hash: string;
+  metadata_cid: string;
+  lot_token_supply: number;
+  tx_hash?: string | null;
+  created_at?: string;
 }
+
+const CHART_COLORS = ["#04BF8A", "#026873", "#024059", "#025940", "#03A64A"];
 
 export default function Dashboard() {
   const { user, isDemo } = useAuth();
-  const navigate = useNavigate();
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    approved: 0,
-    pending: 0,
-    totalValue: 0,
-  });
-  const [contracts, setContracts] = useState<any[]>([]);
+  const wallet = usePolkadotWallet();
+  const [lots, setLots] = useState<LotRow[]>([]);
+  const [chainLots, setChainLots] = useState<LotRow[]>([]);
+  const [isLoadingChain, setIsLoadingChain] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [tokenSupply, setTokenSupply] = useState<bigint>(BigInt(0));
+  const [walletBalance, setWalletBalance] = useState<bigint>(BigInt(0));
+
+  // Real-time events hook
+  const { events } = useLiveEvents(5);
+
+  const displayLots = lots.length > 0 ? lots : chainLots;
+  const totalCarats = useMemo(() => displayLots.reduce((sum, lot) => sum + (lot.carats || 0), 0), [displayLots]);
+
+  // Data for charts
+  const tokenData = useMemo(() => {
+    if (tokenSupply === BigInt(0)) return [{ name: "No Tokens", value: 1 }];
+    return [
+      { name: "Circulante", value: Number(tokenSupply) - Number(walletBalance) },
+      { name: "Tu Balance", value: Number(walletBalance) }
+    ];
+  }, [tokenSupply, walletBalance]);
+
+  const ipfsUrl = (cid: string) => {
+    if (!cid) return "#";
+    const cleaned = cid.startsWith("ipfs://") ? cid.replace("ipfs://", "") : cid;
+    return `https://ipfs.io/ipfs/${cleaned}`;
+  };
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user) return;
-
+    const loadLots = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       try {
-        // Load applications
-        const { data: apps, error } = await supabase
-          .from('credit_applications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('submitted_at', { ascending: false })
-          .limit(10);
+        const { data, error } = await supabase
+          .from("rwa_lots")
+          .select("lot_id, carats, physical_location, custody_provider, cert_hash, metadata_cid, lot_token_supply, tx_hash, created_at")
+          .eq("originator_user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(6);
 
         if (error) throw error;
-
-        setApplications(apps || []);
-
-        // Load contracts pending signature (not yet signed on blockchain)
-        const { data: contractsData, error: contractsError } = await supabase
-          .from('contracts')
-          .select(`
-            *,
-            contract_signatures!contract_signatures_contract_id_fkey (
-              status,
-              created_at,
-              expires_at
-            )
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'sent_to_customer')
-          .is('blockchain_tx_hash', null)
-          .order('created_at', { ascending: false });
-
-        if (contractsError) {
-          console.error('Error loading contracts:', contractsError);
-        } else {
-          setContracts(contractsData || []);
-        }
-
-        // Calculate stats
-        const total = apps?.length || 0;
-        const approved = apps?.filter(a => a.status === 'approved').length || 0;
-        const pending = apps?.filter(a => a.status === 'pending' || a.status === 'under_review').length || 0;
-        const totalValue = apps?.reduce((sum, app) => sum + (app.credit_amount || 0), 0) || 0;
-
-        setStats({
-          total,
-          approved,
-          pending,
-          totalValue,
-        });
-      } catch (error: any) {
-        console.error('Error loading dashboard:', error);
+        setLots((data as LotRow[]) || []);
+      } catch (err) {
+        console.error("Error loading lots:", err);
+        setLots([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadDashboardData();
+    loadLots();
   }, [user]);
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      approved: "bg-secondary/10 text-secondary border border-secondary/20",
-      pending: "bg-amber-50 text-amber-700 border border-amber-200",
-      under_review: "bg-blue-50 text-blue-700 border border-blue-200",
-      rejected: "bg-destructive/10 text-destructive border border-destructive/20",
-      cancelled: "bg-muted text-muted-foreground border border-border",
+  useEffect(() => {
+    const loadChainLots = async () => {
+      if (!wallet.signer || lots.length > 0) return;
+      setIsLoadingChain(true);
+      try {
+        const service = new FacetRwaService(wallet.signer);
+        const total = await service.getTotalLots();
+        if (total === 0) {
+          setChainLots([]);
+          return;
+        }
+        const start = Math.max(1, total - 5);
+        const ids = Array.from({ length: total - start + 1 }, (_, i) => start + i).reverse();
+        const results = await Promise.allSettled(
+          ids.map(async (id) => {
+            const info = await service.getLot(id);
+            return {
+              lot_id: id,
+              carats: info.carats,
+              physical_location: info.physicalLocation,
+              custody_provider: info.custodyProvider,
+              cert_hash: info.certHash,
+              metadata_cid: info.metadataCid,
+              lot_token_supply: Number(info.lotTokenSupply)
+            } satisfies LotRow;
+          })
+        );
+        const rows = results
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => (result as PromiseFulfilledResult<LotRow>).value);
+        if (rows.length !== results.length) {
+          console.warn("Some lots could not be decoded from chain.");
+        }
+        setChainLots(rows);
+      } catch (err) {
+        console.error("Error loading on-chain lots:", err);
+        setChainLots([]);
+      } finally {
+        setIsLoadingChain(false);
+      }
     };
 
-    const labels = {
-      approved: "Aprobado",
-      pending: "Pendiente",
-      under_review: "En Revisión",
-      rejected: "Rechazado",
-      cancelled: "Cancelado",
+    loadChainLots();
+  }, [wallet.signer, lots.length]);
+
+  useEffect(() => {
+    const loadTokenData = async () => {
+      if (!wallet.signer || !wallet.address) return;
+      const service = new FacetRwaService(wallet.signer);
+      const [supply, balance] = await Promise.all([
+        service.getTokenSupply(),
+        service.getTokenBalance(wallet.address)
+      ]);
+      setTokenSupply(supply);
+      setWalletBalance(balance);
     };
 
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles] || styles.pending}`}>
-        {labels[status as keyof typeof labels] || status}
-      </span>
-    );
-  };
-
-  const getRiskBadge = (score: number | null) => {
-    if (!score) return <span className="text-muted-foreground">-</span>;
-    
-    if (score >= 700) {
-      return <span className="text-secondary font-medium">Bajo</span>;
-    } else if (score >= 600) {
-      return <span className="text-amber-600 font-medium">Medio</span>;
-    } else {
-      return <span className="text-destructive font-medium">Alto</span>;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container-professional py-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const statsCards = [
-    {
-      title: "Mis Solicitudes",
-      value: stats.total.toString(),
-      change: "",
-      changeType: "neutral" as const,
-      icon: CreditCard,
-      description: "Total de solicitudes"
-    },
-    {
-      title: "Créditos Aprobados",
-      value: stats.approved.toString(),
-      change: "",
-      changeType: "positive" as const,
-      icon: CheckCircle,
-      description: "Solicitudes aprobadas"
-    },
-    {
-      title: "En Proceso",
-      value: stats.pending.toString(),
-      change: "",
-      changeType: "neutral" as const,
-      icon: Clock,
-      description: "Pendientes y en revisión"
-    },
-    {
-      title: "Valor Total",
-      value: `$${(stats.totalValue / 1_000_000).toFixed(1)}M`,
-      change: "",
-      changeType: "positive" as const,
-      icon: DollarSign,
-      description: "Monto total solicitado"
-    }
-  ];
+    loadTokenData();
+  }, [wallet.signer, wallet.address]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-12">
       <Navbar />
-      
-      <main className="container-professional py-8">
-        {/* Demo Mode Banner */}
-        {isDemo && (
-          <Alert className="bg-blue-50 border-blue-200 mb-6">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 flex items-center justify-between">
-              <span>
-                🎭 <strong>Modo Demo:</strong> Estás explorando la plataforma con datos de ejemplo. Los cambios no son permanentes.
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/auth?tab=signup')}
-                className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100"
-              >
-                Crear cuenta real
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className="text-display">Dashboard</h1>
-            <p className="text-body text-muted-foreground mt-1">
-              Resumen de tus solicitudes de crédito
+
+      <main className="container-professional py-8 space-y-8">
+        {/* News/Alert Context */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-up">
+          <div className="lg:col-span-8 flex flex-col justify-center">
+            <h1 className="text-display">Patrimonio Fraccionado</h1>
+            <p className="text-lg text-muted-foreground mt-2 max-w-2xl">
+              Custodia física de esmeraldas colombianas tokenizadas en Asset Hub.
+              Seguridad on-chain con trazabilidad de activos reales.
             </p>
+            <div className="flex flex-wrap gap-4 mt-8">
+              <Link to="/lots">
+                <Button className="btn-primary">
+                  <Gem className="w-4 h-4" />
+                  Registrar nuevo activo
+                </Button>
+              </Link>
+              <Link to="/activity">
+                <Button variant="outline" className="btn-secondary">
+                  <Activity className="w-4 h-4" />
+                  Ver actividad global
+                </Button>
+              </Link>
+            </div>
           </div>
-          <Link to="/credit-application">
-            <Button className="btn-primary mt-4 md:mt-0">
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Solicitud
-            </Button>
-          </Link>
+
+          <div className="lg:col-span-4 glass-card p-6 flex items-center gap-4 border-l-4 border-l-accent">
+            <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Custodia Blindada</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                Todos los activos están asegurados físicamente bajo protocolos de alta seguridad en Medellín/Bogotá.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsCards.map((stat, index) => (
-            <StatsCard key={index} {...stat} />
-          ))}
+        {/* Live Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCard
+            title="Activos Registrados"
+            value={displayLots.length.toString()}
+            icon={Gem}
+            description="Lotes físicos verificados"
+            delay={1}
+          />
+          <StatsCard
+            title="Quilates en Custodia"
+            value={`${totalCarats} ct`}
+            icon={Vault}
+            description="Inventario total asegurado"
+            changeType="positive"
+            glowing={true}
+            delay={2}
+          />
+          <StatsCard
+            title="Supply FACET-LOT"
+            value={FacetRwaService.formatTokenAmount(tokenSupply)}
+            icon={Coins}
+            description="Tokens en circulación"
+            delay={3}
+          />
+          <StatsCard
+            title="Tu Balance Wallet"
+            value={FacetRwaService.formatTokenAmount(walletBalance)}
+            icon={Wallet}
+            description="Tokens disponibles para trading"
+            glowing={walletBalance > BigInt(0)}
+            delay={4}
+          />
         </div>
 
-        {/* Contracts Pending Signature */}
-        {contracts.length > 0 && (
-          <div className="card-professional p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-heading">Contratos Pendientes de Firma</h2>
-                <p className="text-caption text-muted-foreground mt-1">
-                  Contratos enviados esperando firma digital
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+
+          {/* Left Column: Lot Management */}
+          <div className="lg:col-span-2 space-y-8 animate-fade-up delay-150">
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-heading">Activos Destacados</h3>
+                <Link to="/lots" className="text-xs font-semibold text-accent hover:underline flex items-center gap-1">
+                  Gestionar todos <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              {isLoading || isLoadingChain ? (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-32 w-full" />)}
+                </div>
+              ) : displayLots.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                  <Gem className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">No hay activos registrados aún.</p>
+                  <Link to="/lots" className="mt-4 block">
+                    <Button variant="link" className="text-accent">Empieza ahora</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {displayLots.slice(0, 4).map((lot) => (
+                    <div key={lot.lot_id} className="group relative overflow-hidden bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 hover:border-accent/40 transition-all duration-300">
+                      <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:scale-110 group-hover:opacity-100 transition-all">
+                        <Gem className="w-10 h-10 text-accent/50" />
+                      </div>
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="badge-blue text-[10px]">Lot #{lot.lot_id}</span>
+                          <span className="badge-emerald text-[10px]">Verified</span>
+                        </div>
+                        <h4 className="text-lg font-display font-semibold text-white">{lot.carats} ct Emerald</h4>
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Vault className="w-3 h-3" /> {lot.physical_location}
+                        </p>
+
+                        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                          <div className="flex justify-between items-end">
+                            <div>
+                              <p className="label-uppercase !text-[9px]">Tokenization</p>
+                              <p className="text-sm font-mono text-accent">{lot.lot_token_supply} FACET</p>
+                            </div>
+                            <Link to={`/lots?lotId=${lot.lot_id}`}>
+                              <Button size="sm" variant="ghost" className="h-8 px-2 text-xs hover:bg-accent/10 hover:text-accent">
+                                Detalles <ChevronRight className="w-3 h-3" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions / Integration */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="glass-card p-6 border-t-4 border-t-accent hover:-translate-y-1 transition-transform">
+                <h4 className="text-subheading mb-2">Manual de Redención</h4>
+                <p className="text-caption text-muted-foreground leading-relaxed">
+                  ¿Quieres retirar tu esmeralda físicamente? Quema tus tokens $FACET-LOT y genera un NFT de extracción certificado.
                 </p>
+                <Link to="/lots" className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-accent hover:gap-3 transition-all">
+                  Iniciar proceso <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="glass-card p-6 border-t-4 border-t-blue-500 hover:-translate-y-1 transition-transform">
+                <h4 className="text-subheading mb-2">Mercado Secundario</h4>
+                <p className="text-caption text-muted-foreground leading-relaxed">
+                  Negocia tus esmeraldas fraccionadas con otros usuarios de forma inmediata y segura en el Hub de Polkadot.
+                </p>
+                <Link to="/market" className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-blue-400 hover:gap-3 transition-all">
+                  Explorar órdenes <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Analytics & Feed */}
+          <div className="space-y-8 animate-fade-up delay-300">
+
+            {/* Token Analytics */}
+            <div className="glass-card p-6">
+              <h3 className="text-heading text-xl mb-6">Distribución Tokens</h3>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={tokenData}
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {tokenData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "#0D1117", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px" }}
+                      itemStyle={{ fontSize: "12px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-col gap-2 mt-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[0] }} /> Circulante</span>
+                  <span className="font-mono text-white">{FacetRwaService.formatTokenAmount(tokenSupply - walletBalance)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[1] }} /> Tu Balance</span>
+                  <span className="font-mono text-white">{FacetRwaService.formatTokenAmount(walletBalance)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4">
-              {contracts.map((contract) => {
-                const signature = contract.contract_signatures?.[0];
-                const expiresAt = signature?.expires_at ? new Date(signature.expires_at) : null;
-                const isExpired = expiresAt ? expiresAt < new Date() : false;
-                
-                return (
-                  <div key={contract.id} className="bg-muted/30 border border-border rounded-lg p-4">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-mono text-sm font-semibold">{contract.contract_number}</span>
-                          {isExpired ? (
-                            <span className="px-2 py-1 bg-destructive/10 text-destructive text-xs rounded-full">
-                              Expirado
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 bg-amber-50 text-amber-700 text-xs rounded-full">
-                              Pendiente de Firma
-                            </span>
-                          )}
-                        </div>
-                        <div className="grid md:grid-cols-3 gap-3 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Monto</p>
-                            <p className="font-semibold">${contract.credit_amount?.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Plazo</p>
-                            <p className="font-semibold">{contract.term_months} meses</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Enviado</p>
-                            <p className="font-semibold">
-                              {signature?.created_at ? new Date(signature.created_at).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        {expiresAt && !isExpired && (
-                          <p className="text-caption text-muted-foreground mt-2">
-                            ⏰ Expira: {expiresAt.toLocaleString()}
-                          </p>
-                        )}
+            {/* Live Feed (vía useLiveEvents) */}
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-heading text-xl">Feed en Vivo</h3>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="live-dot" />
+                  <span className="text-[10px] text-accent font-semibold uppercase tracking-wider">Live</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {events.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Esperando actividad...</p>
+                ) : (
+                  events.map((event) => (
+                    <div key={event.id} className="flex gap-3 text-sm animate-slide-in">
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ background: event.event_name === 'LotCreated' ? '#3dd6e8' : '#04BF8A' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white/90">{event.event_name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          Tx: {event.tx_hash.slice(0, 10)}…
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 opacity-60">
+                          {new Date(event.created_at).toLocaleTimeString()}
+                        </p>
                       </div>
-                      <div className="flex md:flex-col gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate('/contract-review', {
-                            state: { contractId: contract.id }
-                          })}
-                        >
-                          <Eye className="w-4 h-4 md:mr-2" />
-                          <span className="hidden md:inline">Ver Detalles</span>
-                        </Button>
-                      </div>
+                      <a href={`${POLKADOT_CONFIG.explorerUrl}/tx/${event.tx_hash}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-white transition-colors">
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
-                  </div>
-                );
-              })}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Recent Applications */}
-        <div className="card-professional p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-heading">Solicitudes Recientes</h2>
-            <div className="flex gap-2">
-              <Link to="/payment-history">
-                <Button variant="outline" size="sm">
-                  <HistoryIcon className="w-4 h-4 mr-2" />
-                  Historial de Pagos
-                </Button>
-              </Link>
-              <Link to="/credit-application">
-                <Button variant="outline" size="sm">
-                  Ver Todas
-                </Button>
-              </Link>
-            </div>
           </div>
-
-          {applications.length === 0 ? (
-            <div className="text-center py-12">
-              <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No hay solicitudes</h3>
-              <p className="text-muted-foreground mb-4">
-                Comienza creando tu primera solicitud de crédito
-              </p>
-              <Link to="/credit-application">
-                <Button className="btn-primary">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nueva Solicitud
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      ID
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Cliente
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Monto
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Estado
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Riesgo
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Fecha
-                    </th>
-                    <th className="text-left py-3 px-4 text-caption font-semibold text-muted-foreground">
-                      Acción
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {applications.map((app) => (
-                    <tr key={app.id} className="border-b border-border hover:bg-accent/50 transition-colors">
-                      <td className="py-4 px-4">
-                        <span className="font-mono text-sm">{app.application_number}</span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="font-medium">{app.client_name}</span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="font-semibold text-foreground">
-                          ${app.credit_amount?.toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        {getStatusBadge(app.status)}
-                      </td>
-                      <td className="py-4 px-4">
-                        {getRiskBadge(app.risk_score)}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-caption">
-                            {new Date(app.submitted_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate('/risk-assessment', {
-                            state: {
-                              applicationId: app.id,
-                              applicationData: {
-                                creditAmount: app.credit_amount,
-                                termMonths: app.term_months,
-                                monthlyIncome: app.monthly_income,
-                                monthlyDebtPayment: app.monthly_debt_payment,
-                                creditHistoryScore: app.credit_history_score,
-                                yearsInEmployment: app.years_in_employment,
-                                purpose: app.purpose
-                              }
-                            }
-                          })}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </main>
     </div>

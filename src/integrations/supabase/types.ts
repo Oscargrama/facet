@@ -443,6 +443,196 @@ export type Database = {
           },
         ]
       }
+      rwa_lot_events: {
+        Row: {
+          block_number: number
+          created_at: string | null
+          event_name: string
+          id: string
+          log_index: number
+          lot_id: number | null
+          payload: Json
+          tx_hash: string
+        }
+        Insert: {
+          block_number: number
+          created_at?: string | null
+          event_name: string
+          id?: string
+          log_index: number
+          lot_id?: number | null
+          payload: Json
+          tx_hash: string
+        }
+        Update: {
+          block_number?: number
+          created_at?: string | null
+          event_name?: string
+          id?: string
+          log_index?: number
+          lot_id?: number | null
+          payload?: Json
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      rwa_lots: {
+        Row: {
+          carats: number
+          chain_id: number | null
+          cert_hash: string
+          created_at: string | null
+          custody_provider: string
+          id: string
+          lot_id: number
+          lot_token_supply: number
+          metadata_cid: string
+          originator_user_id: string | null
+          physical_location: string
+          registry_address: string | null
+          tx_hash: string | null
+        }
+        Insert: {
+          carats: number
+          chain_id?: number | null
+          cert_hash: string
+          created_at?: string | null
+          custody_provider: string
+          id?: string
+          lot_id: number
+          lot_token_supply: number
+          metadata_cid: string
+          originator_user_id?: string | null
+          physical_location: string
+          registry_address?: string | null
+          tx_hash?: string | null
+        }
+        Update: {
+          carats?: number
+          chain_id?: number | null
+          cert_hash?: string
+          created_at?: string | null
+          custody_provider?: string
+          id?: string
+          lot_id?: number
+          lot_token_supply?: number
+          metadata_cid?: string
+          originator_user_id?: string | null
+          physical_location?: string
+          registry_address?: string | null
+          tx_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rwa_lots_originator_user_id_fkey"
+            columns: ["originator_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rwa_stones: {
+        Row: {
+          carats: number
+          cert_cid: string | null
+          cert_date: string | null
+          cert_hash: string | null
+          cert_issuer: string | null
+          certified: boolean | null
+          chain_id: number | null
+          created_at: string | null
+          cut_type: string | null
+          cutter: string | null
+          id: string
+          lot_id: number
+          metadata_cid: string
+          nft_address: string | null
+          originator_user_id: string | null
+          photo_cid: string | null
+          stone_name: string
+          token_id: number
+          tx_hash: string | null
+          video_cid: string | null
+        }
+        Insert: {
+          carats: number
+          cert_cid?: string | null
+          cert_date?: string | null
+          cert_hash?: string | null
+          cert_issuer?: string | null
+          certified?: boolean | null
+          chain_id?: number | null
+          created_at?: string | null
+          cut_type?: string | null
+          cutter?: string | null
+          id?: string
+          lot_id: number
+          metadata_cid: string
+          nft_address?: string | null
+          originator_user_id?: string | null
+          photo_cid?: string | null
+          stone_name: string
+          token_id: number
+          tx_hash?: string | null
+          video_cid?: string | null
+        }
+        Update: {
+          carats?: number
+          cert_cid?: string | null
+          cert_date?: string | null
+          cert_hash?: string | null
+          cert_issuer?: string | null
+          certified?: boolean | null
+          chain_id?: number | null
+          created_at?: string | null
+          cut_type?: string | null
+          cutter?: string | null
+          id?: string
+          lot_id?: number
+          metadata_cid?: string
+          nft_address?: string | null
+          originator_user_id?: string | null
+          photo_cid?: string | null
+          stone_name?: string
+          token_id?: number
+          tx_hash?: string | null
+          video_cid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rwa_stones_originator_user_id_fkey"
+            columns: ["originator_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rwa_indexer_state: {
+        Row: {
+          chain_id: number
+          id: string
+          last_block: number | null
+          registry_address: string
+          updated_at: string | null
+        }
+        Insert: {
+          chain_id: number
+          id?: string
+          last_block?: number | null
+          registry_address: string
+          updated_at?: string | null
+        }
+        Update: {
+          chain_id?: number
+          id?: string
+          last_block?: number | null
+          registry_address?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
