@@ -224,7 +224,7 @@ export default function Auth() {
             Demo
           </Button>
           <a
-            href="https://www.notion.so/2897cb4a6fac80c29ffeda8c7d5f76d8?pvs=25"
+            href="https://facet-pitch-deck.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
           >
